@@ -11,7 +11,7 @@ export default function Home() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace("/profile");
+      if (user) router.replace("/dashboard");
     });
   }, [router]);
 

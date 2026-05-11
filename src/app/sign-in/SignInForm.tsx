@@ -37,7 +37,7 @@ export default function SignInForm() {
       return;
     }
 
-    router.push("/profile");
+    router.push("/dashboard");
   }
 
   return (

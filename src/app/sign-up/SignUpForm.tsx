@@ -91,7 +91,7 @@ export default function SignUpForm() {
       });
     }
 
-    router.push("/profile");
+    router.push("/dashboard");
   }
 
   return (
