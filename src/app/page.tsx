@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRequests, getStatusSummary } from "@/lib/supabase/queries";
 import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
+import TabNav from "@/components/TabNav";
 
 function StatusRow({
   statusId,
@@ -76,6 +77,7 @@ export default async function Home({
             จองคอนกรีต
           </Link>
         </div>
+        <TabNav active="home" />
       </header>
 
       <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-5">
