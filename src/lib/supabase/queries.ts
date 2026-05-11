@@ -128,85 +128,75 @@ export const getStatusSummary = unstable_cache(
   { tags: ["requests", "statuses"], revalidate: 60 }
 );
 
-async function _getLocations() {
+export async function getLocations() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Location").select("*").order("full_location");
   if (error) throw error;
   return data ?? [];
 }
-export const getLocations = unstable_cache(_getLocations, ["locations"], { tags: ["locations"], revalidate: 3600 });
 
-async function _getStructures() {
+export async function getStructures() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Structure").select("*").order("structure_name");
   if (error) throw error;
   return data ?? [];
 }
-export const getStructures = unstable_cache(_getStructures, ["structures"], { tags: ["structures"], revalidate: 3600 });
 
-async function _getClients() {
+export async function getClients() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Client").select("*").order("client_name");
   if (error) throw error;
   return data ?? [];
 }
-export const getClients = unstable_cache(_getClients, ["clients"], { tags: ["clients"], revalidate: 3600 });
 
-async function _getMixedCodes() {
+export async function getMixedCodes() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Mixed Code").select("*").order("mixcode");
   if (error) throw error;
   return data ?? [];
 }
-export const getMixedCodes = unstable_cache(_getMixedCodes, ["mixcodes"], { tags: ["mixcodes"], revalidate: 3600 });
 
-async function _getConcreteWorks() {
+export async function getConcreteWorks() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Concrete Works").select("*").order("concrete_work");
   if (error) throw error;
   return data ?? [];
 }
-export const getConcreteWorks = unstable_cache(_getConcreteWorks, ["concrete-works"], { tags: ["concrete-works"], revalidate: 3600 });
 
-async function _getProfiles() {
+export async function getProfiles() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("profiles").select("*").order("fname");
   if (error) throw error;
   return data ?? [];
 }
-export const getProfiles = unstable_cache(_getProfiles, ["profiles"], { tags: ["profiles"], revalidate: 3600 });
 
-async function _getJobs() {
+export async function getJobs() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Jobs").select("*").order("job_name");
   if (error) throw error;
   return data ?? [];
 }
-export const getJobs = unstable_cache(_getJobs, ["jobs"], { tags: ["jobs"], revalidate: 3600 });
 
-async function _getABCCodes() {
+export async function getABCCodes() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("ABC Code").select("*").order("full_abc");
   if (error) throw error;
   return data ?? [];
 }
-export const getABCCodes = unstable_cache(_getABCCodes, ["abc-codes"], { tags: ["abc-codes"], revalidate: 3600 });
 
-async function _getWBSCodes() {
+export async function getWBSCodes() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("WBS Code").select("*").order("full_wbs");
   if (error) throw error;
   return data ?? [];
 }
-export const getWBSCodes = unstable_cache(_getWBSCodes, ["wbs-codes"], { tags: ["wbs-codes"], revalidate: 3600 });
 
-async function _getCompressionMachines() {
+export async function getCompressionMachines() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase.from("Compression Machine").select("*").order("machine");
   if (error) throw error;
   return data ?? [];
 }
-export const getCompressionMachines = unstable_cache(_getCompressionMachines, ["compression-machines"], { tags: ["compression-machines"], revalidate: 3600 });
 
 export type MixcodeVolume = {
   mixcode_id: number;
