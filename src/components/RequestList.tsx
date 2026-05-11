@@ -64,41 +64,41 @@ function RequestCard({ req }: { req: RequestView }) {
       className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 active:bg-orange-50 transition-colors"
     >
       {/* left: date + time */}
-      <div className="shrink-0 text-center w-14">
-        <p className="text-xs font-semibold text-gray-900 leading-tight tabular-nums">
+      <div className="shrink-0 text-center w-12">
+        <p className="text-[10px] font-semibold text-gray-900 leading-tight tabular-nums">
           {formatDate(req.request_date)}
         </p>
         {req.request_time && (
-          <p className="text-[10px] text-gray-400 tabular-nums mt-0.5">
+          <p className="text-[9px] text-gray-400 tabular-nums mt-0.5">
             {req.request_time.slice(0, 5)}
           </p>
         )}
       </div>
 
       {/* divider */}
-      <div className="w-px h-8 bg-gray-200 shrink-0" />
+      <div className="w-px h-7 bg-gray-200 shrink-0" />
 
       {/* middle: main info + status badge */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">
+        <p className="text-xs font-medium text-gray-900 truncate">
           {req.full_location ?? "-"}
           {req.structure_no ? <span className="text-gray-400 font-normal"> · {req.structure_no}</span> : null}
         </p>
-        <p className="text-xs text-gray-500 truncate mt-0.5">
+        <p className="text-[10px] text-gray-500 truncate mt-0.5">
           {req.concrete_work ?? "-"} · {req.mixcode ?? "-"}
         </p>
-        <div className="mt-1.5">
+        <div className="mt-1">
           <StatusBadge statusId={req.status_id} statusName={req.status_name} />
         </div>
       </div>
 
       {/* right: volume + chevron */}
-      <div className="shrink-0 flex items-center gap-1.5">
+      <div className="shrink-0 flex items-center gap-1">
         <div className="text-right">
-          <p className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+          <p className="text-xs font-semibold text-gray-900 tabular-nums whitespace-nowrap">
             {req.volume_request?.toLocaleString() ?? "-"}
           </p>
-          <p className="text-[10px] text-gray-400">m³</p>
+          <p className="text-[9px] text-gray-400">m³</p>
         </div>
         <ChevronRight />
       </div>
@@ -116,10 +116,10 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
       {/* top row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">
+          <p className="text-xs font-semibold text-gray-900 truncate">
             {req.client_name ?? "ไม่ระบุผู้ว่าจ้าง"}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5 truncate">{req.full_location ?? "-"}</p>
+          <p className="text-[10px] text-gray-500 mt-0.5 truncate">{req.full_location ?? "-"}</p>
         </div>
         <div className="flex items-start gap-1 shrink-0 max-w-[48%]">
           <StatusBadge statusId={req.status_id} statusName={req.status_name} />
@@ -128,44 +128,44 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
       </div>
 
       {/* detail grid */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400">วันที่ขอ</p>
-          <p className="text-sm text-gray-700">
+          <p className="text-[9px] uppercase tracking-wider text-gray-400">วันที่ขอ</p>
+          <p className="text-xs text-gray-700">
             {formatDate(req.request_date)}
             {req.request_time && (
-              <span className="ml-1.5 text-gray-400 text-xs tabular-nums">{req.request_time.slice(0, 5)}</span>
+              <span className="ml-1 text-gray-400 tabular-nums">{req.request_time.slice(0, 5)}</span>
             )}
           </p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400">วันที่เท</p>
-          <p className="text-sm text-gray-700">{formatDate(req.casting_date)}</p>
+          <p className="text-[9px] uppercase tracking-wider text-gray-400">วันที่เท</p>
+          <p className="text-xs text-gray-700">{formatDate(req.casting_date)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400">โครงสร้าง</p>
-          <p className="text-sm text-gray-700">
+          <p className="text-[9px] uppercase tracking-wider text-gray-400">โครงสร้าง</p>
+          <p className="text-xs text-gray-700 truncate">
             {req.structure_name ?? "-"}{req.structure_no ? ` (${req.structure_no})` : ""}
           </p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400">ประเภทงาน</p>
-          <p className="text-sm text-gray-700">{req.concrete_work ?? "-"}</p>
+          <p className="text-[9px] uppercase tracking-wider text-gray-400">ประเภทงาน</p>
+          <p className="text-xs text-gray-700 truncate">{req.concrete_work ?? "-"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400">Mix Code</p>
-          <p className="text-sm text-gray-700">{req.mixcode ?? "-"}</p>
+          <p className="text-[9px] uppercase tracking-wider text-gray-400">Mix Code</p>
+          <p className="text-xs text-gray-700">{req.mixcode ?? "-"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400">ปริมาตรขอ</p>
-          <p className="text-sm font-semibold text-gray-900 tabular-nums">
+          <p className="text-[9px] uppercase tracking-wider text-gray-400">ปริมาตรขอ</p>
+          <p className="text-xs font-semibold text-gray-900 tabular-nums">
             {req.volume_request?.toLocaleString() ?? "-"} <span className="font-normal text-gray-400">m³</span>
           </p>
         </div>
       </div>
 
       {req.remarks && (
-        <p className="text-xs text-gray-500 border-t border-gray-100 pt-2 truncate">{req.remarks}</p>
+        <p className="text-[10px] text-gray-500 border-t border-gray-100 pt-2 truncate">{req.remarks}</p>
       )}
     </Link>
   );
