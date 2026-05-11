@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { createReadonlyClient } from "@/lib/supabase/readonly";
 import type { Tables } from "@/types/database.types";
 
@@ -15,7 +14,9 @@ export type ABCCode = Tables<"ABC Code">;
 export type WBSCode = Tables<"WBS Code">;
 export type CompressionMachine = Tables<"Compression Machine">;
 
-async function _getRequests(limit: number, offset: number) {
+/* ── Requests ──────────────────────────────────────────────────── */
+
+export async function getRequests(limit: number, offset: number) {
   const supabase = createReadonlyClient();
   const { data, error, count } = await supabase
     .from("Request_View")
@@ -23,18 +24,11 @@ async function _getRequests(limit: number, offset: number) {
     .order("created_at", { ascending: false, nullsFirst: false })
     .order("request_date", { ascending: false, nullsFirst: false })
     .range(offset, offset + limit - 1);
-
   if (error) throw error;
   return { data: data ?? [], count: count ?? 0 };
 }
 
-export const getRequests = unstable_cache(
-  _getRequests,
-  ["requests"],
-  { tags: ["requests"], revalidate: 60 }
-);
-
-async function _getRequestsByStatus(statusId: number, limit: number, offset: number) {
+export async function getRequestsByStatus(statusId: number, limit = 200, offset = 0) {
   const supabase = createReadonlyClient();
   const { data, error, count } = await supabase
     .from("Request_View")
@@ -43,63 +37,34 @@ async function _getRequestsByStatus(statusId: number, limit: number, offset: num
     .order("created_at", { ascending: false, nullsFirst: false })
     .order("request_date", { ascending: false, nullsFirst: false })
     .range(offset, offset + limit - 1);
-
   if (error) throw error;
   return { data: data ?? [], count: count ?? 0 };
 }
 
-export function getRequestsByStatus(statusId: number, limit = 200, offset = 0) {
-  return unstable_cache(
-    () => _getRequestsByStatus(statusId, limit, offset),
-    [`requests-status-${statusId}-${limit}-${offset}`],
-    { tags: ["requests", `requests-status-${statusId}`], revalidate: 60 }
-  )();
-}
-
 export async function getRequestById(id: string) {
-  return unstable_cache(
-    async () => {
-      const supabase = createReadonlyClient();
-      const { data, error } = await supabase
-        .from("Request_View")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    [`request-${id}`],
-    { tags: ["requests", `request-${id}`], revalidate: 60 }
-  )();
-}
-
-async function _getStatusList() {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase
-    .from("Status")
+    .from("Request_View")
     .select("*")
-    .order("id");
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getStatusList() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Status").select("*").order("id");
   if (error) throw error;
   return data ?? [];
 }
 
-export const getStatusList = unstable_cache(
-  _getStatusList,
-  ["statuses"],
-  { tags: ["statuses"], revalidate: 3600 }
-);
-
-async function _getStatusSummary() {
+export async function getStatusSummary() {
   const supabase = createReadonlyClient();
-
   const { data: statuses, error: statusErr } = await supabase
-    .from("Status")
-    .select("id, status_name")
-    .order("id");
-
+    .from("Status").select("id, status_name").order("id");
   if (statusErr) throw statusErr;
 
-  // Parallel HEAD count requests per status — no rows transferred
   const counts = await Promise.all(
     (statuses ?? []).map((s) =>
       supabase
@@ -111,9 +76,7 @@ async function _getStatusSummary() {
   );
 
   const countMap: Record<number, number> = {};
-  for (const { status_id, count } of counts) {
-    countMap[status_id] = count;
-  }
+  for (const { status_id, count } of counts) countMap[status_id] = count;
 
   return (statuses ?? []).map((s) => ({
     status_id: s.id,
@@ -122,11 +85,7 @@ async function _getStatusSummary() {
   }));
 }
 
-export const getStatusSummary = unstable_cache(
-  _getStatusSummary,
-  ["status-summary"],
-  { tags: ["requests", "statuses"], revalidate: 60 }
-);
+/* ── Lookup tables (no cache — always fresh) ───────────────────── */
 
 export async function getLocations() {
   const supabase = createReadonlyClient();
@@ -198,25 +157,29 @@ export async function getCompressionMachines() {
   return data ?? [];
 }
 
+/* ── Mixed Code volume aggregation ────────────────────────────── */
+
 export type MixcodeVolume = {
   mixcode_id: number;
   volume_used: number;
 };
 
-async function _getVolumeByMixcode(): Promise<MixcodeVolume[]> {
+export async function getVolumeByMixcode(): Promise<MixcodeVolume[]> {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase
     .from("Request")
-    .select("mixcode_id, volume_confirm")
-    .not("mixcode_id", "is", null)
-    .not("volume_confirm", "is", null);
+    .select("mixcode_id, volume_confirm, volume_request")
+    .not("mixcode_id", "is", null);
 
   if (error) throw error;
 
   const map: Record<number, number> = {};
   for (const row of data ?? []) {
-    if (row.mixcode_id == null || row.volume_confirm == null) continue;
-    map[row.mixcode_id] = (map[row.mixcode_id] ?? 0) + row.volume_confirm;
+    if (row.mixcode_id == null) continue;
+    // ใช้ volume_confirm ถ้ามี ไม่มีก็ใช้ volume_request
+    const vol = row.volume_confirm ?? row.volume_request;
+    if (vol == null) continue;
+    map[row.mixcode_id] = (map[row.mixcode_id] ?? 0) + vol;
   }
 
   return Object.entries(map).map(([id, vol]) => ({
@@ -224,9 +187,3 @@ async function _getVolumeByMixcode(): Promise<MixcodeVolume[]> {
     volume_used: vol,
   }));
 }
-
-export const getVolumeByMixcode = unstable_cache(
-  _getVolumeByMixcode,
-  ["mixcode-volumes"],
-  { tags: ["requests", "mixcodes"], revalidate: 60 }
-);

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getRequests, getStatusSummary } from "@/lib/supabase/queries";
 import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
