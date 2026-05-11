@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getMixedCodes, getVolumeByMixcode } from "@/lib/supabase/queries";
 import type { MixedCode, MixcodeVolume } from "@/lib/supabase/queries";
 import TabNav from "@/components/TabNav";
+import { AddMixedCodeButton, EditMixedCodeButton } from "./MixedCodeActions";
 
 export const metadata = {
   title: "Mixed Code | Concrete Works",
@@ -33,7 +34,7 @@ function VolumeBar({ used, total }: { used: number; total: number | null }) {
 function MixedCodeRow({ mc }: { mc: MixedCodeWithVolume }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
       <td className="px-4 py-3 font-mono text-xs font-semibold text-orange-600 whitespace-nowrap">
         {mc.mixcode ?? "-"}
       </td>
@@ -69,6 +70,9 @@ function MixedCodeRow({ mc }: { mc: MixedCodeWithVolume }) {
           </div>
         )}
       </td>
+      <td className="px-3 py-3 whitespace-nowrap">
+        <EditMixedCodeButton mc={mc} />
+      </td>
     </tr>
   );
 }
@@ -83,11 +87,14 @@ function MixedCodeCard({ mc }: { mc: MixedCodeWithVolume }) {
         <span className="font-mono text-sm font-bold text-orange-600">
           {mc.mixcode ?? "-"}
         </span>
-        {mc.supplier && (
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-            {mc.supplier}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {mc.supplier && (
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              {mc.supplier}
+            </span>
+          )}
+          <EditMixedCodeButton mc={mc} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
@@ -186,8 +193,11 @@ export default async function MixedCodesPage() {
 
       <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-gray-500 text-sm font-medium uppercase tracking-wider">Mixed Code</h2>
-          <span className="text-gray-400 text-xs">{data.length.toLocaleString()} รายการ</span>
+          <div className="flex items-center gap-3">
+            <h2 className="text-gray-500 text-sm font-medium uppercase tracking-wider">Mixed Code</h2>
+            <span className="text-gray-400 text-xs">{data.length.toLocaleString()} รายการ</span>
+          </div>
+          <AddMixedCodeButton />
         </div>
 
         {data.length === 0 ? (
@@ -217,6 +227,7 @@ export default async function MixedCodesPage() {
                       <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">เทแล้ว (m³)</th>
                       <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">คงเหลือ (m³)</th>
                       <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">การใช้งาน</th>
+                      <th className="px-3 py-3 w-10" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
