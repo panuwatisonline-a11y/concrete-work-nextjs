@@ -207,3 +207,36 @@ async function _getCompressionMachines() {
   return data ?? [];
 }
 export const getCompressionMachines = unstable_cache(_getCompressionMachines, ["compression-machines"], { tags: ["compression-machines"], revalidate: 3600 });
+
+export type MixcodeVolume = {
+  mixcode_id: number;
+  volume_used: number;
+};
+
+async function _getVolumeByMixcode(): Promise<MixcodeVolume[]> {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase
+    .from("Request")
+    .select("mixcode_id, volume_actual")
+    .not("mixcode_id", "is", null)
+    .not("volume_actual", "is", null);
+
+  if (error) throw error;
+
+  const map: Record<number, number> = {};
+  for (const row of data ?? []) {
+    if (row.mixcode_id == null || row.volume_actual == null) continue;
+    map[row.mixcode_id] = (map[row.mixcode_id] ?? 0) + row.volume_actual;
+  }
+
+  return Object.entries(map).map(([id, vol]) => ({
+    mixcode_id: Number(id),
+    volume_used: vol,
+  }));
+}
+
+export const getVolumeByMixcode = unstable_cache(
+  _getVolumeByMixcode,
+  ["mixcode-volumes"],
+  { tags: ["requests", "mixcodes"], revalidate: 60 }
+);
