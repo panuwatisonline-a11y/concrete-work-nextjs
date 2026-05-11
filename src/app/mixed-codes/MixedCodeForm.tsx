@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useId, useRef } from "react";
 import { createMixedCode, updateMixedCode, type MixedCodeState } from "./actions";
 import type { MixedCode, Structure } from "@/lib/supabase/queries";
 import { MultiSelect } from "@/components/MultiSelect";
@@ -72,6 +72,7 @@ export default function MixedCodeForm({ mode, initial, structures, onClose }: Pr
   const action = mode === "create" ? createMixedCode : updateMixedCode;
   const [state, formAction, pending] = useActionState<MixedCodeState, FormData>(action, {});
   const overlayRef = useRef<HTMLDivElement>(null);
+  const formId = useId();
 
   useEffect(() => {
     if (state.success) onClose();
@@ -83,7 +84,7 @@ export default function MixedCodeForm({ mode, initial, structures, onClose }: Pr
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col" style={{ maxHeight: "90dvh" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">
@@ -101,7 +102,7 @@ export default function MixedCodeForm({ mode, initial, structures, onClose }: Pr
         </div>
 
         {/* Form */}
-        <form action={formAction} className="px-5 py-4 space-y-3">
+        <form id={formId} action={formAction} className="px-5 py-4 space-y-3 overflow-y-auto flex-1">
           {mode === "edit" && <input type="hidden" name="id" value={initial?.id} />}
 
           {state.error && (
@@ -178,11 +179,15 @@ export default function MixedCodeForm({ mode, initial, structures, onClose }: Pr
                 }))}
                 defaultValue={initial?.structure_list ?? ""}
                 placeholder="-- เลือกโครงสร้าง --"
+                title="For Structure"
               />
             </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
+        </form>
+
+        {/* Sticky footer buttons */}
+        <div className="px-5 pb-5 pt-3 border-t border-gray-100 flex gap-2 bg-white rounded-b-2xl">
             <button
               type="button"
               onClick={onClose}
@@ -191,6 +196,7 @@ export default function MixedCodeForm({ mode, initial, structures, onClose }: Pr
               ยกเลิก
             </button>
             <button
+              form={formId}
               type="submit"
               disabled={pending}
               className="flex-1 px-4 py-2.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 rounded-lg transition"
@@ -198,7 +204,6 @@ export default function MixedCodeForm({ mode, initial, structures, onClose }: Pr
               {pending ? "กำลังบันทึก..." : mode === "create" ? "เพิ่ม Mix Code" : "บันทึกการแก้ไข"}
             </button>
           </div>
-        </form>
       </div>
     </div>
   );
