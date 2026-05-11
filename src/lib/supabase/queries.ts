@@ -217,16 +217,16 @@ async function _getVolumeByMixcode(): Promise<MixcodeVolume[]> {
   const supabase = createReadonlyClient();
   const { data, error } = await supabase
     .from("Request")
-    .select("mixcode_id, volume_actual")
+    .select("mixcode_id, volume_confirm")
     .not("mixcode_id", "is", null)
-    .not("volume_actual", "is", null);
+    .not("volume_confirm", "is", null);
 
   if (error) throw error;
 
   const map: Record<number, number> = {};
   for (const row of data ?? []) {
-    if (row.mixcode_id == null || row.volume_actual == null) continue;
-    map[row.mixcode_id] = (map[row.mixcode_id] ?? 0) + row.volume_actual;
+    if (row.mixcode_id == null || row.volume_confirm == null) continue;
+    map[row.mixcode_id] = (map[row.mixcode_id] ?? 0) + row.volume_confirm;
   }
 
   return Object.entries(map).map(([id, vol]) => ({
