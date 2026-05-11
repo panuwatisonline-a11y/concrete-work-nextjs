@@ -10,6 +10,8 @@ import {
 import BookingForm from "./BookingForm";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "จองคอนกรีต | Concrete Works",
 };

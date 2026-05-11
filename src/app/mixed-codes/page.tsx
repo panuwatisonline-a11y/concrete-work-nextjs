@@ -4,6 +4,8 @@ import type { MixedCode, MixcodeVolume, Structure } from "@/lib/supabase/queries
 import TabNav from "@/components/TabNav";
 import { AddMixedCodeButton, EditMixedCodeButton } from "./MixedCodeActions";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Mixed Code | Concrete Works",
 };
