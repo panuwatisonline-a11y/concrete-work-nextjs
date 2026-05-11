@@ -21,7 +21,7 @@ function StatusItem({
           <div className={`h-full rounded-full ${s.bar}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <span className={`text-base font-bold tabular-nums shrink-0 ${value > 0 ? "text-zinc-900" : "text-zinc-300"}`}>
+      <span className={`text-sm font-bold tabular-nums shrink-0 min-w-[2rem] text-center px-2 py-0.5 rounded-full ${value > 0 ? "bg-zinc-100 text-zinc-700" : "bg-zinc-50 text-zinc-300"}`}>
         {value}
       </span>
       <svg className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
