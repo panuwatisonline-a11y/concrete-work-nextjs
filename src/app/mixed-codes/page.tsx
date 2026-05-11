@@ -23,7 +23,7 @@ function UsageBar({ used, total }: { used: number; total: number | null }) {
         <span>{pct}%</span>
         <span>{fmt(total)} m³</span>
       </div>
-      <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+      <div className="w-full bg-zinc-50 rounded-full h-1.5 overflow-hidden">
         <div className={`h-full rounded-full transition-all ${over ? "bg-red-400" : pct > 80 ? "bg-amber-400" : "bg-orange-400"}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -38,7 +38,7 @@ function MCCard({ mc, structures }: { mc: MC; structures: Structure[] }) {
       <div className="flex items-center justify-between">
         <span className="font-mono text-sm font-semibold text-orange-500">{mc.mixcode ?? "—"}</span>
         <div className="flex items-center gap-2">
-          {mc.supplier && <span className="text-xs text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">{mc.supplier}</span>}
+          {mc.supplier && <span className="text-xs text-zinc-400 bg-zinc-50 px-2 py-0.5 rounded-full">{mc.supplier}</span>}
           <EditMixedCodeButton mc={mc} structures={structures} />
         </div>
       </div>
@@ -98,10 +98,10 @@ export default async function MixedCodesPage() {
   });
 
   return (
-    <main className="min-h-screen bg-zinc-100">
+    <main className="min-h-screen bg-zinc-50">
       {/* Top header */}
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
-        <div className="max-w-screen-2xl mx-auto px-4 h-12 flex items-center justify-between">
+        <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <AppLogo />
           <BtnPrimary href="/book"><PlusIcon />จองคอนกรีต</BtnPrimary>
         </div>

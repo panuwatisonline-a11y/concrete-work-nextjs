@@ -12,10 +12,10 @@ export default async function BookPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-zinc-100">
+    <main className="min-h-screen bg-zinc-50">
       <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
-        <div className="max-w-screen-md mx-auto px-4 h-12 flex items-center gap-3">
-          <Link href="/" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 transition shrink-0">
+        <div className="max-w-screen-md mx-auto px-4 h-14 flex items-center gap-3">
+          <Link href="/" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-50 transition shrink-0">
             <svg className="w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
