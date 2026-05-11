@@ -1,20 +1,22 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function Home() {
+  const router = useRouter();
 
-  if (user) {
-    redirect("/profile");
-  }
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) router.replace("/profile");
+    });
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950">
-      {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
@@ -42,7 +44,6 @@ export default async function Home() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="flex-1 flex items-center justify-center px-4 py-24 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-5"
@@ -51,7 +52,6 @@ export default async function Home() {
               "repeating-linear-gradient(0deg,transparent,transparent 39px,#475569 39px,#475569 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,#475569 39px,#475569 40px)",
           }}
         />
-        {/* Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-2xl mx-auto text-center">
@@ -89,7 +89,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="border-t border-slate-800 py-16 px-4 bg-slate-900/50">
         <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-6 text-center">
           {[
@@ -121,7 +120,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-slate-800 py-6 px-4">
         <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
           © {new Date().getFullYear()} Concrete Works Co., Ltd. All rights reserved.

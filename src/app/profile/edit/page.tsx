@@ -1,30 +1,69 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import EditProfileForm from "./EditProfileForm";
 
-export default async function EditProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+type Job = { id: number; job_name: string | null };
 
-  if (!user) {
-    redirect("/sign-in");
+type ProfileData = {
+  fname: string | null;
+  lname: string | null;
+  employee_id: string | null;
+  phone: string | null;
+  role: string | null;
+  job: number | null;
+};
+
+export default function EditProfilePage() {
+  const router = useRouter();
+  const [initialData, setInitialData] = useState<ProfileData | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) {
+        router.replace("/sign-in");
+        return;
+      }
+
+      const [{ data: profile }, { data: jobList }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("fname, lname, employee_id, phone, role, Job")
+          .eq("id", user.id)
+          .single(),
+        supabase.from("Jobs").select("id, job_name").order("id"),
+      ]);
+
+      setInitialData({
+        fname: profile?.fname ?? null,
+        lname: profile?.lname ?? null,
+        employee_id: profile?.employee_id ?? null,
+        phone: profile?.phone ?? null,
+        role: profile?.role ?? null,
+        job: profile?.Job ?? null,
+      });
+      setJobs(jobList ?? []);
+      setLoading(false);
+    });
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
-
-  const [{ data: profile }, { data: jobs }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("fname, lname, employee_id, phone, role, Job")
-      .eq("id", user.id)
-      .single(),
-    supabase.from("Jobs").select("id, job_name").order("id"),
-  ]);
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950">
-      {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3">
@@ -62,17 +101,9 @@ export default async function EditProfilePage() {
               </p>
             </div>
 
-            <EditProfileForm
-              initialData={{
-                fname: profile?.fname ?? null,
-                lname: profile?.lname ?? null,
-                employee_id: profile?.employee_id ?? null,
-                phone: profile?.phone ?? null,
-                role: profile?.role ?? null,
-                job: profile?.Job ?? null,
-              }}
-              jobs={jobs ?? []}
-            />
+            {initialData && (
+              <EditProfileForm initialData={initialData} jobs={jobs} />
+            )}
           </div>
         </div>
       </div>

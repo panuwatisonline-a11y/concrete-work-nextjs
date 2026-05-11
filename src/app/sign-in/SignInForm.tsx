@@ -1,16 +1,47 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { signIn, type SignInState } from "@/app/actions/auth";
-
-const initialState: SignInState = {};
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SignInForm() {
-  const [state, action, isPending] = useActionState(signIn, initialState);
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [isPending, setIsPending] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    setError("");
+
+    const form = e.currentTarget;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+
+    if (!email || !password) {
+      setError("กรุณากรอกอีเมลและรหัสผ่าน");
+      setIsPending(false);
+      return;
+    }
+
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      setIsPending(false);
+      return;
+    }
+
+    router.push("/profile");
+  }
 
   return (
-    <form action={action} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label
           htmlFor="email"
@@ -47,9 +78,9 @@ export default function SignInForm() {
         />
       </div>
 
-      {state.error && (
+      {error && (
         <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-          {state.error}
+          {error}
         </div>
       )}
 
