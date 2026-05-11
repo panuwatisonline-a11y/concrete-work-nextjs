@@ -34,6 +34,9 @@ jobs:
 
       - name: Build Project
         run: vercel build ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://whvjuhldzzyqvzaievqc.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_zH3BEcz0_1fFXFxMOors3w_yw3tZ4R2
 
       - name: Deploy to Vercel
         id: deploy
