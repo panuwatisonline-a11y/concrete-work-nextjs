@@ -78,7 +78,7 @@ export function AppLogo() {
       <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
         C
       </div>
-      <span className="text-sm font-semibold text-zinc-900 group-hover:text-orange-500 transition hidden sm:block">
+      <span className="text-sm font-semibold text-zinc-900 group-hover:text-orange-500 transition">
         Concrete Works
       </span>
     </Link>
