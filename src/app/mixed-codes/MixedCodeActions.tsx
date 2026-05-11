@@ -23,6 +23,25 @@ export function AddMixedCodeButton({ structures }: { structures: Structure[] }) 
   );
 }
 
+export function MixedCodeFAB({ structures }: { structures: Structure[] }) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-20 right-4 z-30 md:hidden w-14 h-14 bg-orange-500 hover:bg-orange-600 active:scale-95 rounded-full shadow-lg flex items-center justify-center text-white transition"
+        aria-label="เพิ่ม Mix Code"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+      {open && <MixedCodeForm mode="create" structures={structures} onClose={close} />}
+    </>
+  );
+}
+
 export function EditMixedCodeButton({ mc, structures }: { mc: MixedCode; structures: Structure[] }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);

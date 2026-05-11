@@ -11,7 +11,8 @@ type TabId = (typeof TABS)[number]["id"];
 
 export default function TabNav({ active }: { active: TabId }) {
   return (
-    <div className="bg-white border-b border-zinc-100 sticky top-14 z-10">
+    /* Desktop only — mobile uses BottomNav */
+    <div className="hidden md:block bg-white border-b border-zinc-100 sticky top-14 z-10">
       <div className="max-w-screen-2xl mx-auto px-4 flex gap-1">
         {TABS.map((tab) => {
           const isActive = tab.id === active;

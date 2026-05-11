@@ -1,8 +1,9 @@
 import { getMixedCodes, getVolumeByMixcode, getStructures } from "@/lib/supabase/queries";
 import type { MixedCode, MixcodeVolume, Structure } from "@/lib/supabase/queries";
 import TabNav from "@/components/TabNav";
-import { AddMixedCodeButton, EditMixedCodeButton } from "./MixedCodeActions";
+import { AddMixedCodeButton, EditMixedCodeButton, MixedCodeFAB } from "./MixedCodeActions";
 import { AppLogo, Card } from "@/components/ui";
+import BottomNav from "@/components/BottomNav";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mixed Code | Concrete Works" };
@@ -103,14 +104,21 @@ export default async function MixedCodesPage() {
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <AppLogo />
-          <AddMixedCodeButton structures={structures} />
+          {/* Desktop only — mobile uses FAB */}
+          <div className="hidden md:block">
+            <AddMixedCodeButton structures={structures} />
+          </div>
         </div>
       </header>
 
       {/* Tab nav */}
       <TabNav active="mixed-codes" />
 
-      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4">
+      {/* FAB — mobile only */}
+      <MixedCodeFAB structures={structures} />
+      <BottomNav />
+
+      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4 pb-24 md:pb-5">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Mixed Code</p>
           <span className="text-xs text-zinc-400">{data.length} รายการ</span>

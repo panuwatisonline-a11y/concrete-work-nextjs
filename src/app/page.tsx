@@ -2,10 +2,10 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { getRequests, getStatusSummary } from "@/lib/supabase/queries";
-import { RequestList } from "@/components/RequestList";
+import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
 import TabNav from "@/components/TabNav";
+import BottomNav from "@/components/BottomNav";
 import { AppLogo, BtnPrimary, PlusIcon } from "@/components/ui";
-import { STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
 
 function StatusItem({
   statusId, label, value, total,
@@ -46,13 +46,26 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <AppLogo />
-          <BtnPrimary href="/book"><PlusIcon />จองคอนกรีต</BtnPrimary>
+          {/* Desktop only — mobile uses FAB */}
+          <BtnPrimary href="/book" className="hidden md:inline-flex"><PlusIcon />จองคอนกรีต</BtnPrimary>
         </div>
       </header>
 
       <TabNav active="home" />
 
-      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-5">
+      {/* FAB — mobile only */}
+      <Link
+        href="/book"
+        className="fixed bottom-20 right-4 z-30 md:hidden w-14 h-14 bg-orange-500 hover:bg-orange-600 active:scale-95 rounded-full shadow-lg flex items-center justify-center text-white transition"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </Link>
+
+      <BottomNav />
+
+      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-5 pb-24 md:pb-5">
         {params.success && (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 flex items-center gap-2.5 text-sm">
             <svg className="w-4 h-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
