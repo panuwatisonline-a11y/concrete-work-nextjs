@@ -104,7 +104,9 @@ export default async function RequestDetailPage({
               {req.request_time && <span className="ml-1">{req.request_time.slice(0, 5)}</span>}
             </p>
           </div>
-          <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+          <div className="shrink-0 max-w-[40%]">
+            <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+          </div>
         </div>
       </header>
 

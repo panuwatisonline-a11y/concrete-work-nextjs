@@ -22,15 +22,28 @@ export function statusStyle(id: number | null) {
   return id != null ? (STATUS_STYLES[id] ?? FALLBACK_STYLE) : FALLBACK_STYLE;
 }
 
-export function StatusBadge({ statusId, statusName }: { statusId: number | null; statusName: string | null }) {
+export function StatusBadge({
+  statusId,
+  statusName,
+  truncate = true,
+}: {
+  statusId: number | null;
+  statusName: string | null;
+  truncate?: boolean;
+}) {
   if (!statusName) return null;
   const s = statusStyle(statusId);
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-xs font-medium ${s.badge}`}>
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium leading-tight ${s.badge} ${truncate ? "max-w-[130px]" : ""}`}>
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
-      {statusName}
+      <span className={truncate ? "truncate" : ""}>{statusName}</span>
     </span>
   );
+}
+
+export function StatusDot({ statusId }: { statusId: number | null }) {
+  const s = statusStyle(statusId);
+  return <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`} />;
 }
 
 export function formatDate(d: string | null) {
@@ -67,7 +80,7 @@ function RequestCard({ req }: { req: RequestView }) {
       {/* divider */}
       <div className="w-px h-8 bg-gray-200 shrink-0" />
 
-      {/* middle: main info */}
+      {/* middle: main info + status badge */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 truncate">
           {req.full_location ?? "-"}
@@ -76,15 +89,18 @@ function RequestCard({ req }: { req: RequestView }) {
         <p className="text-xs text-gray-500 truncate mt-0.5">
           {req.concrete_work ?? "-"} · {req.mixcode ?? "-"}
         </p>
+        <div className="mt-1.5">
+          <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+        </div>
       </div>
 
-      {/* right: volume + status + chevron */}
-      <div className="shrink-0 flex items-center gap-2">
+      {/* right: volume + chevron */}
+      <div className="shrink-0 flex items-center gap-1.5">
         <div className="text-right">
-          <p className="text-sm font-semibold text-gray-900 tabular-nums">
-            {req.volume_request?.toLocaleString() ?? "-"} <span className="text-xs font-normal text-gray-400">m³</span>
+          <p className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+            {req.volume_request?.toLocaleString() ?? "-"}
           </p>
-          <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+          <p className="text-[10px] text-gray-400">m³</p>
         </div>
         <ChevronRight />
       </div>
@@ -107,7 +123,7 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
           </p>
           <p className="text-xs text-gray-500 mt-0.5 truncate">{req.full_location ?? "-"}</p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 max-w-[45%]">
           <StatusBadge statusId={req.status_id} statusName={req.status_name} />
           <ChevronRight />
         </div>
