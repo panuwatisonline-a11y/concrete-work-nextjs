@@ -1,0 +1,202 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getRequestById } from "@/lib/supabase/queries";
+import { StatusBadge, formatDate } from "@/components/RequestList";
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">{label}</p>
+      <p className="text-sm text-gray-800">{value}</p>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</p>
+      </div>
+      <div className="px-4 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FullWidthField({ label, value }: { label: string; value: React.ReactNode }) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <div className="col-span-2">
+      <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">{label}</p>
+      <p className="text-sm text-gray-800">{value}</p>
+    </div>
+  );
+}
+
+function TimelineItem({
+  label,
+  at,
+  by,
+}: {
+  label: string;
+  at: string | null;
+  by: string | null;
+}) {
+  if (!at) return null;
+  const d = new Date(at);
+  const dateStr = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return (
+    <div className="flex gap-3 items-start">
+      <div className="mt-1 w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+      <div>
+        <p className="text-sm font-medium text-gray-800">{label}</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {dateStr} {timeStr}
+          {by && <span className="ml-2 text-gray-500">โดย {by}</span>}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default async function RequestDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const req = await getRequestById(id).catch(() => null);
+  if (!req) notFound();
+
+  const timeline = [
+    { label: "จองแล้ว", at: req.booked_at, by: req.booked_by_name },
+    { label: "ตรวจสอบผ่านแล้ว", at: req.inspected_at, by: req.inspected_by_name },
+    { label: "อนุมัติ", at: req.approved_at, by: req.approved_by_name },
+    { label: "ยืนยันรายการ", at: req.confirmed_at, by: req.confirmed_by_name },
+    { label: "เลื่อนวันเท", at: req.postponed_at, by: req.postponed_by_name },
+    { label: "ปฏิเสธ", at: req.rejected_at, by: req.rejected_by_name },
+    { label: "ยกเลิก", at: req.cancelled_at, by: req.cancelled_by_name },
+  ].filter((t) => t.at);
+
+  return (
+    <main className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Link
+            href={req.status_id ? `/requests?status=${req.status_id}` : "/"}
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors shrink-0"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 truncate">
+              {req.full_location ?? "รายละเอียดคำขอ"}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">
+              {formatDate(req.request_date)}
+              {req.request_time && <span className="ml-1">{req.request_time.slice(0, 5)}</span>}
+            </p>
+          </div>
+          <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+        </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+        {/* Primary info */}
+        <Section title="ข้อมูลการขอ">
+          <Field label="วันที่ขอ" value={
+            <>
+              {formatDate(req.request_date)}
+              {req.request_time && <span className="ml-1.5 text-gray-400 text-xs">{req.request_time.slice(0, 5)}</span>}
+            </>
+          } />
+          <Field label="วันที่เทคอนกรีต" value={formatDate(req.casting_date)} />
+          <Field label="ผู้ว่าจ้าง" value={req.client_name} />
+          <FullWidthField label="สถานที่" value={req.full_location} />
+          <Field label="โครงสร้าง" value={req.structure_name} />
+          <Field label="หมายเลขโครงสร้าง" value={req.structure_no} />
+          <FullWidthField label="ประเภทงาน" value={req.concrete_work} />
+        </Section>
+
+        {/* Concrete specs */}
+        <Section title="ข้อมูลคอนกรีต">
+          <Field label="Mix Code" value={req.mixcode} />
+          <Field label="กำลังอัด" value={req.strength ? `${req.strength} ${req.strength_type ?? "ksc"}` : null} />
+          <Field label="Slump" value={req.slump} />
+          <Field label="Supplier" value={req.supplier} />
+          <Field label="ปริมาตรตามแบบ (m³)" value={req.volume_dwg?.toLocaleString()} />
+          <Field label="ปริมาตรที่ขอ (m³)" value={
+            <span className="font-semibold text-gray-900">
+              {req.volume_request?.toLocaleString() ?? "-"}
+            </span>
+          } />
+          {req.volume_actual != null && (
+            <Field label="ปริมาตรจริง (m³)" value={req.volume_actual.toLocaleString()} />
+          )}
+          {req.volume_confirm != null && (
+            <Field label="ปริมาตร Confirm (m³)" value={req.volume_confirm.toLocaleString()} />
+          )}
+          <Field label="จำนวนตัวอย่าง" value={req.sample_qty != null ? `${req.sample_qty} ก้อน${req.sample_type ? ` (${req.sample_type})` : ""}` : null} />
+        </Section>
+
+        {/* Codes */}
+        {(req.full_wbs || req.full_abc) && (
+          <Section title="รหัสโปรเจกต์">
+            <FullWidthField label="WBS Code" value={req.full_wbs} />
+            <FullWidthField label="ABC Code" value={req.full_abc} />
+          </Section>
+        )}
+
+        {/* Postpone info */}
+        {req.postpone_date && (
+          <Section title="ข้อมูลการเลื่อน">
+            <Field label="วันที่เลื่อนเป็น" value={
+              <>
+                {formatDate(req.postpone_date)}
+                {req.postpone_time && <span className="ml-1.5 text-gray-400 text-xs">{req.postpone_time.slice(0, 5)}</span>}
+              </>
+            } />
+            <FullWidthField label="เหตุผล" value={req.reason_postpone} />
+          </Section>
+        )}
+
+        {/* Reject / Cancel reason */}
+        {(req.reason_reject || req.reason_cancel) && (
+          <Section title="เหตุผล">
+            <FullWidthField label="เหตุผลการปฏิเสธ" value={req.reason_reject} />
+            <FullWidthField label="เหตุผลการยกเลิก" value={req.reason_cancel} />
+          </Section>
+        )}
+
+        {/* Remarks */}
+        {req.remarks && (
+          <div className="bg-white border border-gray-200 rounded-xl px-4 py-4 shadow-sm">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1.5">หมายเหตุ</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{req.remarks}</p>
+          </div>
+        )}
+
+        {/* Timeline */}
+        {timeline.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ประวัติการดำเนินการ</p>
+            </div>
+            <div className="px-4 py-4 space-y-4">
+              {timeline.map((t) => (
+                <TimelineItem key={t.label} label={t.label} at={t.at} by={t.by} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

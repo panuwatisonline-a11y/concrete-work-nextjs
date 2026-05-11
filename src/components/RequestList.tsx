@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { RequestView } from "@/lib/supabase/queries";
 
 export const STATUS_STYLES: Record<number, { badge: string; dot: string; bar: string }> = {
@@ -38,13 +39,21 @@ export function formatDate(d: string | null) {
   return `${day}/${m}/${y}`;
 }
 
-/* ── Mobile card ── */
+const ChevronRight = () => (
+  <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+  </svg>
+);
+
+/* ── Compact mobile card (dashboard) ── */
 function RequestCard({ req }: { req: RequestView }) {
-  const s = statusStyle(req.status_id);
   return (
-    <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors">
+    <Link
+      href={`/requests/${req.id}`}
+      className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 active:bg-orange-50 transition-colors"
+    >
       {/* left: date + time */}
-      <div className="shrink-0 text-center w-16">
+      <div className="shrink-0 text-center w-14">
         <p className="text-xs font-semibold text-gray-900 leading-tight tabular-nums">
           {formatDate(req.request_date)}
         </p>
@@ -69,61 +78,39 @@ function RequestCard({ req }: { req: RequestView }) {
         </p>
       </div>
 
-      {/* right: volume + badge */}
-      <div className="shrink-0 text-right">
-        <p className="text-sm font-semibold text-gray-900">
-          {req.volume_request?.toLocaleString() ?? "-"} <span className="text-xs font-normal text-gray-400">m³</span>
-        </p>
-        <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+      {/* right: volume + status + chevron */}
+      <div className="shrink-0 flex items-center gap-2">
+        <div className="text-right">
+          <p className="text-sm font-semibold text-gray-900 tabular-nums">
+            {req.volume_request?.toLocaleString() ?? "-"} <span className="text-xs font-normal text-gray-400">m³</span>
+          </p>
+          <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+        </div>
+        <ChevronRight />
       </div>
-    </div>
+    </Link>
   );
 }
 
-/* ── Desktop table row ── */
-function RequestRow({ req }: { req: RequestView }) {
-  return (
-    <tr className="border-b border-gray-100 hover:bg-orange-50/50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-        {formatDate(req.request_date)}
-        {req.request_time && (
-          <span className="ml-1.5 text-gray-400 text-xs tabular-nums">{req.request_time.slice(0, 5)}</span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-700">{req.client_name ?? "-"}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">{req.full_location ?? "-"}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">
-        {req.structure_name ?? "-"}
-        {req.structure_no ? (
-          <span className="ml-1 text-gray-400 text-xs">({req.structure_no})</span>
-        ) : null}
-      </td>
-      <td className="px-4 py-3 text-sm text-gray-700">{req.concrete_work ?? "-"}</td>
-      <td className="px-4 py-3 text-sm text-gray-700">{req.mixcode ?? "-"}</td>
-      <td className="px-4 py-3 text-sm text-right text-gray-700 whitespace-nowrap">
-        {req.volume_request != null ? req.volume_request.toLocaleString() : "-"}
-      </td>
-      <td className="px-4 py-3 text-sm">
-        <StatusBadge statusId={req.status_id} statusName={req.status_name} />
-      </td>
-    </tr>
-  );
-}
-
-/* ── Detailed mobile card (for status page) ── */
+/* ── Detailed mobile card (status page) ── */
 function RequestCardDetailed({ req }: { req: RequestView }) {
-  const s = statusStyle(req.status_id);
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 active:bg-gray-50 transition-colors">
+    <Link
+      href={`/requests/${req.id}`}
+      className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 active:bg-orange-50 transition-colors block"
+    >
       {/* top row */}
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">
             {req.client_name ?? "ไม่ระบุผู้ว่าจ้าง"}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">{req.full_location ?? "-"}</p>
+          <p className="text-xs text-gray-500 mt-0.5 truncate">{req.full_location ?? "-"}</p>
         </div>
-        <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+          <ChevronRight />
+        </div>
       </div>
 
       {/* detail grid */}
@@ -157,16 +144,60 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-400">ปริมาตรขอ</p>
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm font-semibold text-gray-900 tabular-nums">
             {req.volume_request?.toLocaleString() ?? "-"} <span className="font-normal text-gray-400">m³</span>
           </p>
         </div>
       </div>
 
       {req.remarks && (
-        <p className="text-xs text-gray-500 border-t border-gray-100 pt-2">{req.remarks}</p>
+        <p className="text-xs text-gray-500 border-t border-gray-100 pt-2 truncate">{req.remarks}</p>
       )}
-    </div>
+    </Link>
+  );
+}
+
+/* ── Desktop table row ── */
+function RequestRow({ req }: { req: RequestView }) {
+  return (
+    <tr className="border-b border-gray-100 hover:bg-orange-50/50 transition-colors cursor-pointer">
+      <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+        <Link href={`/requests/${req.id}`} className="block">
+          {formatDate(req.request_date)}
+          {req.request_time && (
+            <span className="ml-1.5 text-gray-400 text-xs tabular-nums">{req.request_time.slice(0, 5)}</span>
+          )}
+        </Link>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-700">
+        <Link href={`/requests/${req.id}`} className="block">{req.client_name ?? "-"}</Link>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-700">
+        <Link href={`/requests/${req.id}`} className="block">{req.full_location ?? "-"}</Link>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-700">
+        <Link href={`/requests/${req.id}`} className="block">
+          {req.structure_name ?? "-"}
+          {req.structure_no ? (
+            <span className="ml-1 text-gray-400 text-xs">({req.structure_no})</span>
+          ) : null}
+        </Link>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-700">
+        <Link href={`/requests/${req.id}`} className="block">{req.concrete_work ?? "-"}</Link>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-700">
+        <Link href={`/requests/${req.id}`} className="block">{req.mixcode ?? "-"}</Link>
+      </td>
+      <td className="px-4 py-3 text-sm text-right text-gray-700 whitespace-nowrap tabular-nums">
+        <Link href={`/requests/${req.id}`} className="block">
+          {req.volume_request != null ? req.volume_request.toLocaleString() : "-"}
+        </Link>
+      </td>
+      <td className="px-4 py-3 text-sm">
+        <StatusBadge statusId={req.status_id} statusName={req.status_name} />
+      </td>
+    </tr>
   );
 }
 
@@ -199,7 +230,7 @@ export function RequestList({
         )}
       </div>
 
-      {/* Desktop: table (same for both variants) */}
+      {/* Desktop: table */}
       <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
