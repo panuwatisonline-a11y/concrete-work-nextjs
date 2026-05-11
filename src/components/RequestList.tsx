@@ -25,18 +25,16 @@ export function statusStyle(id: number | null) {
 export function StatusBadge({
   statusId,
   statusName,
-  truncate = true,
 }: {
   statusId: number | null;
   statusName: string | null;
-  truncate?: boolean;
 }) {
   if (!statusName) return null;
   const s = statusStyle(statusId);
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium leading-tight ${s.badge} ${truncate ? "max-w-[130px]" : ""}`}>
-      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
-      <span className={truncate ? "truncate" : ""}>{statusName}</span>
+    <span className={`inline-flex items-start gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium leading-tight ${s.badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-[2px] ${s.dot}`} />
+      <span className="break-all">{statusName}</span>
     </span>
   );
 }
@@ -123,7 +121,7 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
           </p>
           <p className="text-xs text-gray-500 mt-0.5 truncate">{req.full_location ?? "-"}</p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 max-w-[45%]">
+        <div className="flex items-start gap-1 shrink-0 max-w-[48%]">
           <StatusBadge statusId={req.status_id} statusName={req.status_name} />
           <ChevronRight />
         </div>
