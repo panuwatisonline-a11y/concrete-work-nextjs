@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getMixedCodes, getVolumeByMixcode } from "@/lib/supabase/queries";
-import type { MixedCode, MixcodeVolume } from "@/lib/supabase/queries";
+import { getMixedCodes, getVolumeByMixcode, getStructures } from "@/lib/supabase/queries";
+import type { MixedCode, MixcodeVolume, Structure } from "@/lib/supabase/queries";
 import TabNav from "@/components/TabNav";
 import { AddMixedCodeButton, EditMixedCodeButton } from "./MixedCodeActions";
 
@@ -31,7 +31,7 @@ function VolumeBar({ used, total }: { used: number; total: number | null }) {
   );
 }
 
-function MixedCodeRow({ mc }: { mc: MixedCodeWithVolume }) {
+function MixedCodeRow({ mc, structures }: { mc: MixedCodeWithVolume; structures: Structure[] }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
@@ -71,13 +71,13 @@ function MixedCodeRow({ mc }: { mc: MixedCodeWithVolume }) {
         )}
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
-        <EditMixedCodeButton mc={mc} />
+        <EditMixedCodeButton mc={mc} structures={structures} />
       </td>
     </tr>
   );
 }
 
-function MixedCodeCard({ mc }: { mc: MixedCodeWithVolume }) {
+function MixedCodeCard({ mc, structures }: { mc: MixedCodeWithVolume; structures: Structure[] }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   const pct = hasQty ? Math.min(Math.round((mc.volume_used / mc.qty!) * 100), 100) : 0;
 
@@ -93,7 +93,7 @@ function MixedCodeCard({ mc }: { mc: MixedCodeWithVolume }) {
               {mc.supplier}
             </span>
           )}
-          <EditMixedCodeButton mc={mc} />
+          <EditMixedCodeButton mc={mc} structures={structures} />
         </div>
       </div>
 
@@ -147,9 +147,10 @@ function MixedCodeCard({ mc }: { mc: MixedCodeWithVolume }) {
 }
 
 export default async function MixedCodesPage() {
-  const [mixedCodes, volumes] = await Promise.all([
+  const [mixedCodes, volumes, structures] = await Promise.all([
     getMixedCodes(),
     getVolumeByMixcode(),
+    getStructures(),
   ]);
 
   const volumeMap: Record<number, MixcodeVolume> = {};
@@ -197,7 +198,7 @@ export default async function MixedCodesPage() {
             <h2 className="text-gray-500 text-sm font-medium uppercase tracking-wider">Mixed Code</h2>
             <span className="text-gray-400 text-xs">{data.length.toLocaleString()} รายการ</span>
           </div>
-          <AddMixedCodeButton />
+          <AddMixedCodeButton structures={structures} />
         </div>
 
         {data.length === 0 ? (
@@ -209,7 +210,7 @@ export default async function MixedCodesPage() {
             {/* Mobile: cards */}
             <div className="md:hidden space-y-2">
               {data.map((mc) => (
-                <MixedCodeCard key={mc.id} mc={mc} />
+                <MixedCodeCard key={mc.id} mc={mc} structures={structures} />
               ))}
             </div>
 
@@ -232,7 +233,7 @@ export default async function MixedCodesPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {data.map((mc) => (
-                      <MixedCodeRow key={mc.id} mc={mc} />
+                      <MixedCodeRow key={mc.id} mc={mc} structures={structures} />
                     ))}
                   </tbody>
                 </table>

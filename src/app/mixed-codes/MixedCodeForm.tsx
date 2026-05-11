@@ -2,11 +2,13 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { createMixedCode, updateMixedCode, type MixedCodeState } from "./actions";
-import type { MixedCode } from "@/lib/supabase/queries";
+import type { MixedCode, Structure } from "@/lib/supabase/queries";
+import { MultiSelect } from "@/components/MultiSelect";
 
 type Props = {
   mode: "create" | "edit";
   initial?: MixedCode;
+  structures: Structure[];
   onClose: () => void;
 };
 
@@ -66,7 +68,7 @@ function Field({
   );
 }
 
-export default function MixedCodeForm({ mode, initial, onClose }: Props) {
+export default function MixedCodeForm({ mode, initial, structures, onClose }: Props) {
   const action = mode === "create" ? createMixedCode : updateMixedCode;
   const [state, formAction, pending] = useActionState<MixedCodeState, FormData>(action, {});
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -165,12 +167,17 @@ export default function MixedCodeForm({ mode, initial, onClose }: Props) {
             />
 
             <div className="col-span-2">
-              <Field
-                label="รายการโครงสร้าง"
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                รายการโครงสร้าง
+              </label>
+              <MultiSelect
                 name="structure_list"
-                defaultValue={initial?.structure_list}
-                placeholder="โครงสร้างที่ใช้งาน"
-                rows={2}
+                options={structures.map((s) => ({
+                  value: String(s.id),
+                  label: s.structure_name ?? "",
+                }))}
+                defaultValue={initial?.structure_list ?? ""}
+                placeholder="-- เลือกโครงสร้าง --"
               />
             </div>
           </div>

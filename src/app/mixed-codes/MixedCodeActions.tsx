@@ -2,9 +2,9 @@
 
 import { useState, useCallback } from "react";
 import MixedCodeForm from "./MixedCodeForm";
-import type { MixedCode } from "@/lib/supabase/queries";
+import type { MixedCode, Structure } from "@/lib/supabase/queries";
 
-export function AddMixedCodeButton() {
+export function AddMixedCodeButton({ structures }: { structures: Structure[] }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
@@ -19,12 +19,12 @@ export function AddMixedCodeButton() {
         </svg>
         เพิ่ม Mix Code
       </button>
-      {open && <MixedCodeForm mode="create" onClose={close} />}
+      {open && <MixedCodeForm mode="create" structures={structures} onClose={close} />}
     </>
   );
 }
 
-export function EditMixedCodeButton({ mc }: { mc: MixedCode }) {
+export function EditMixedCodeButton({ mc, structures }: { mc: MixedCode; structures: Structure[] }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
 
@@ -39,7 +39,7 @@ export function EditMixedCodeButton({ mc }: { mc: MixedCode }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 0110 16.414H8v-2a2 2 0 01.586-1.414z" />
         </svg>
       </button>
-      {open && <MixedCodeForm mode="edit" initial={mc} onClose={close} />}
+      {open && <MixedCodeForm mode="edit" initial={mc} structures={structures} onClose={close} />}
     </>
   );
 }
