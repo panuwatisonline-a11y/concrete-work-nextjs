@@ -1,0 +1,207 @@
+"use client";
+
+import { useActionState } from "react";
+import Link from "next/link";
+import { signUp, type SignUpState } from "@/app/actions/auth";
+
+type Job = { id: number; job_name: string | null };
+
+type Props = {
+  jobs: Job[];
+};
+
+const initialState: SignUpState = {};
+
+export default function SignUpForm({ jobs }: Props) {
+  const [state, action, isPending] = useActionState(signUp, initialState);
+
+  return (
+    <form action={action} className="space-y-5">
+      {/* Name row */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label
+            htmlFor="fname"
+            className="block text-sm font-medium text-slate-300 mb-1.5"
+          >
+            ชื่อ <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="fname"
+            name="fname"
+            type="text"
+            required
+            placeholder="สมชาย"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="lname"
+            className="block text-sm font-medium text-slate-300 mb-1.5"
+          >
+            นามสกุล <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="lname"
+            name="lname"
+            type="text"
+            required
+            placeholder="ใจดี"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="employee_id"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          รหัสพนักงาน
+        </label>
+        <input
+          id="employee_id"
+          name="employee_id"
+          type="text"
+          placeholder="EMP-0001"
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="phone"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          เบอร์โทรศัพท์
+        </label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          placeholder="08x-xxx-xxxx"
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="role"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          ตำแหน่ง
+        </label>
+        <input
+          id="role"
+          name="role"
+          type="text"
+          placeholder="วิศวกรสนาม"
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="job"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          โครงการ
+        </label>
+        <select
+          id="job"
+          name="job"
+          defaultValue=""
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        >
+          <option value="" disabled className="text-slate-500">
+            -- เลือกโครงการ --
+          </option>
+          {jobs.map((j) => (
+            <option key={j.id} value={j.id} className="bg-slate-800">
+              {j.job_name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="border-t border-slate-800 pt-5">
+        <label
+          htmlFor="email"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          อีเมล <span className="text-red-400">*</span>
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="your@email.com"
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="password"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          รหัสผ่าน <span className="text-red-400">*</span>
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          placeholder="อย่างน้อย 6 ตัวอักษร"
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="confirmPassword"
+          className="block text-sm font-medium text-slate-300 mb-1.5"
+        >
+          ยืนยันรหัสผ่าน <span className="text-red-400">*</span>
+        </label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          required
+          placeholder="••••••••"
+          className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500 transition-colors"
+        />
+      </div>
+
+      {state.error && (
+        <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+          {state.error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-400 disabled:bg-orange-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-lg shadow-orange-500/20"
+      >
+        {isPending ? "กำลังสมัคร..." : "สมัครใช้งาน"}
+      </button>
+
+      <p className="text-center text-sm text-slate-400">
+        มีบัญชีอยู่แล้ว?{" "}
+        <Link
+          href="/sign-in"
+          className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
+        >
+          ลงชื่อเข้าใช้
+        </Link>
+      </p>
+    </form>
+  );
+}

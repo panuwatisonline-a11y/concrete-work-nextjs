@@ -1,65 +1,132 @@
-import Image from "next/image";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/profile");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen flex flex-col bg-slate-950">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center font-bold text-white text-sm">
+              CW
+            </div>
+            <span className="font-semibold text-white tracking-wide">
+              Concrete Works
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/sign-in"
+              className="px-4 py-2 text-sm text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-lg transition-colors"
+            >
+              ลงชื่อเข้าใช้
+            </Link>
+            <Link
+              href="/sign-up"
+              className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-400 text-white font-medium rounded-lg transition-colors"
+            >
+              สมัครใช้งาน
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="flex-1 flex items-center justify-center px-4 py-24 relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg,transparent,transparent 39px,#475569 39px,#475569 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,#475569 39px,#475569 40px)",
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+        {/* Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-2xl mx-auto text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500/10 border border-orange-500/30 rounded-2xl mb-6">
+            <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white text-base">
+              CW
+            </div>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
+            ระบบจัดการงาน
+            <br />
+            <span className="text-orange-500">Concrete Works</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-slate-400 text-lg mb-10 leading-relaxed">
+            ระบบบริหารจัดการงานก่อสร้างคอนกรีต สำหรับทีมงานภาคสนาม
+            <br className="hidden sm:block" />
+            ติดตามคำขอ ตรวจสอบสถานะ และบริหารทีมในที่เดียว
           </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/sign-up"
+              className="px-8 py-4 bg-orange-500 hover:bg-orange-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/20 text-base"
+            >
+              สมัครใช้งาน
+            </Link>
+            <Link
+              href="/sign-in"
+              className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition-all text-base"
+            >
+              ลงชื่อเข้าใช้
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Features */}
+      <section className="border-t border-slate-800 py-16 px-4 bg-slate-900/50">
+        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-6 text-center">
+          {[
+            {
+              icon: "📋",
+              title: "จัดการคำขอ",
+              desc: "ยื่น ติดตาม และอนุมัติคำขอเทคอนกรีตได้ทุกที่ทุกเวลา",
+            },
+            {
+              icon: "👥",
+              title: "บริหารทีมงาน",
+              desc: "กำหนดบทบาทและสิทธิ์การเข้าถึงให้กับสมาชิกในทีม",
+            },
+            {
+              icon: "📊",
+              title: "รายงานสถานะ",
+              desc: "ดูภาพรวมงานก่อสร้างแบบ Real-time ครบในหน้าเดียว",
+            },
+          ].map((f) => (
+            <div
+              key={f.title}
+              className="p-6 rounded-2xl bg-slate-900 border border-slate-800"
+            >
+              <div className="text-3xl mb-3">{f.icon}</div>
+              <h3 className="font-bold text-white mb-2">{f.title}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 py-6 px-4">
+        <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
+          © {new Date().getFullYear()} Concrete Works Co., Ltd. All rights reserved.
+        </div>
+      </footer>
+    </main>
   );
 }
