@@ -21,14 +21,14 @@ function StatusRow({
       className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 active:bg-orange-50 -mx-5 px-5 transition-colors group"
     >
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`} />
-      <span className="text-gray-700 text-sm flex-1 min-w-0 truncate group-hover:text-gray-900 transition-colors">{label}</span>
-      <div className="hidden sm:block flex-1 max-w-48">
+      <span className="text-gray-700 text-sm flex-1 min-w-0 leading-snug group-hover:text-gray-900 transition-colors">{label}</span>
+      <div className="hidden sm:block w-32 shrink-0">
         <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
           <div className={`h-full rounded-full ${s.bar}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className={`text-lg font-bold w-12 text-right ${value > 0 ? "text-gray-900" : "text-gray-300"}`}>
+        <span className={`text-lg font-bold w-10 text-right tabular-nums ${value > 0 ? "text-gray-900" : "text-gray-300"}`}>
           {value.toLocaleString()}
         </span>
         <svg className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
