@@ -7,14 +7,13 @@ import type { MixedCode, Structure } from "@/lib/supabase/queries";
 export function AddMixedCodeButton({ structures }: { structures: Structure[] }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
-
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 active:scale-95 transition text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm"
+        className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg transition"
       >
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
         เพิ่ม Mix Code
@@ -27,12 +26,11 @@ export function AddMixedCodeButton({ structures }: { structures: Structure[] }) 
 export function EditMixedCodeButton({ mc, structures }: { mc: MixedCode; structures: Structure[] }) {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
-
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition"
+        className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-orange-500 hover:bg-orange-50 transition"
         title="แก้ไข"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

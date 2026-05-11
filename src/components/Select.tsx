@@ -4,21 +4,11 @@ import { useState, useRef, useEffect, useId } from "react";
 
 export type SelectOption = { value: string; label: string };
 
-interface SelectProps {
-  name: string;
-  options: SelectOption[];
-  placeholder?: string;
-  required?: boolean;
-  defaultValue?: string;
-}
-
 export function Select({
-  name,
-  options,
-  placeholder = "-- เลือก --",
-  required,
-  defaultValue = "",
-}: SelectProps) {
+  name, options, placeholder = "— เลือก —", required, defaultValue = "",
+}: {
+  name: string; options: SelectOption[]; placeholder?: string; required?: boolean; defaultValue?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<SelectOption | null>(
     () => options.find((o) => o.value === defaultValue) ?? null
@@ -34,8 +24,6 @@ export function Select({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const choose = (opt: SelectOption) => { setSelected(opt); setOpen(false); };
-
   return (
     <div ref={containerRef} className="relative">
       <input type="hidden" name={name} value={selected?.value ?? ""} required={required} />
@@ -44,44 +32,34 @@ export function Select({
         type="button"
         id={id}
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between gap-2 bg-[--surface] border rounded-[6px] pl-3 pr-2.5 py-2 text-sm text-left transition focus:outline-none focus:ring-1 focus:ring-zinc-400
-          ${open ? "border-zinc-400 ring-1 ring-zinc-400" : "border-[--border]"}
-          ${!selected ? "text-[--text-faint]" : "text-[--text]"}`}
+        className={[
+          "w-full flex items-center justify-between gap-2 bg-white border rounded-lg pl-3 pr-2.5 py-2 text-sm text-left transition focus:outline-none focus:ring-2 focus:ring-zinc-100",
+          open ? "border-zinc-400" : "border-zinc-200 hover:border-zinc-300",
+          selected ? "text-zinc-900" : "text-zinc-300",
+        ].join(" ")}
       >
         <span className="truncate text-xs">{selected?.label ?? placeholder}</span>
-        <svg
-          className={`w-3.5 h-3.5 shrink-0 text-[--text-faint] transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
+        <svg className={`w-3.5 h-3.5 shrink-0 text-zinc-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-[--surface] border border-[--border] rounded-[--radius] shadow-sm overflow-hidden">
-          <div className="max-h-56 overflow-y-auto overscroll-contain">
-            <button
-              type="button"
-              onClick={() => { setSelected(null); setOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-xs transition-colors
-                ${!selected ? "text-[--accent] bg-[--accent-bg]" : "text-[--text-faint] hover:bg-[--border-subtle]"}`}
-            >
+        <div className="absolute z-50 mt-1 w-full bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="max-h-56 overflow-y-auto overscroll-contain py-1">
+            <button type="button" onClick={() => { setSelected(null); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-xs transition-colors ${!selected ? "text-orange-500 bg-orange-50" : "text-zinc-400 hover:bg-zinc-50"}`}>
               {placeholder}
             </button>
-            <div className="h-px bg-[--border-subtle] mx-2" />
+            <div className="h-px bg-zinc-100 mx-2 my-1" />
             {options.map((opt) => {
-              const isSelected = selected?.value === opt.value;
+              const sel = selected?.value === opt.value;
               return (
-                <button
-                  type="button"
-                  key={opt.value}
-                  onClick={() => choose(opt)}
-                  className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 transition-colors
-                    ${isSelected ? "text-[--accent] bg-[--accent-bg]" : "text-[--text-2] hover:bg-[--border-subtle]"}`}
-                >
+                <button type="button" key={opt.value} onClick={() => { setSelected(opt); setOpen(false); }}
+                  className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 transition-colors ${sel ? "text-orange-500 bg-orange-50" : "text-zinc-700 hover:bg-zinc-50"}`}>
                   <span className="truncate">{opt.label}</span>
-                  {isSelected && (
-                    <svg className="w-3.5 h-3.5 shrink-0 text-[--accent]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  {sel && (
+                    <svg className="w-3.5 h-3.5 shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}

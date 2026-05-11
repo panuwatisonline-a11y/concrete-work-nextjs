@@ -1,13 +1,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-/* ─── Typography helpers ──────────────────────────────────── */
+/* ── Shared input class ──────────────────────────────────────────── */
+export const inputCls =
+  "w-full bg-white border border-zinc-200 text-zinc-900 rounded-lg px-3 py-2 text-sm " +
+  "focus:outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 " +
+  "transition placeholder-zinc-300 disabled:opacity-40";
 
+/* ── Label / FieldError ──────────────────────────────────────────── */
 export function Label({ children, required }: { children: ReactNode; required?: boolean }) {
   return (
-    <label className="block text-xs font-medium text-[--text-muted] mb-1.5 tracking-wide">
+    <label className="block text-xs font-medium text-zinc-500 mb-1.5">
       {children}
-      {required && <span className="ml-1 text-[--accent]">*</span>}
+      {required && <span className="ml-0.5 text-orange-500">*</span>}
     </label>
   );
 }
@@ -17,63 +22,32 @@ export function FieldError({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs text-red-500">{msg}</p>;
 }
 
-/* ─── Input / Textarea ────────────────────────────────────── */
-
-export const inputCls =
-  "w-full bg-[--surface] border border-[--border] text-[--text] rounded-[--radius-sm] px-3 py-2 text-sm focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition placeholder-[--text-faint] disabled:opacity-40";
-
-/* ─── Buttons ─────────────────────────────────────────────── */
-
-export function BtnPrimary({
-  children,
-  href,
-  onClick,
-  type = "button",
-  disabled,
-  className = "",
-}: {
+/* ── Buttons ─────────────────────────────────────────────────────── */
+type BtnProps = {
   children: ReactNode;
   href?: string;
   onClick?: () => void;
   type?: "button" | "submit";
   disabled?: boolean;
   className?: string;
-}) {
-  const cls = `inline-flex items-center gap-1.5 bg-[--accent] hover:opacity-90 active:scale-95 transition text-white text-xs font-semibold px-3 py-2 rounded-[--radius-sm] disabled:opacity-40 ${className}`;
+};
+
+export function BtnPrimary({ children, href, onClick, type = "button", disabled, className = "" }: BtnProps) {
+  const cls = `inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-40 ${className}`;
   if (href) return <Link href={href} className={cls}>{children}</Link>;
   return <button type={type} onClick={onClick} disabled={disabled} className={cls}>{children}</button>;
 }
 
-export function BtnGhost({
-  children,
-  onClick,
-  type = "button",
-  disabled,
-  className = "",
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  type?: "button" | "submit";
-  disabled?: boolean;
-  className?: string;
-}) {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-1.5 bg-[--border-subtle] hover:bg-[--border] active:scale-95 transition text-[--text-2] text-xs font-medium px-3 py-2 rounded-[--radius-sm] disabled:opacity-40 ${className}`}
-    >
-      {children}
-    </button>
-  );
+export function BtnGhost({ children, href, onClick, type = "button", disabled, className = "" }: BtnProps) {
+  const cls = `inline-flex items-center gap-1.5 bg-zinc-100 hover:bg-zinc-200 active:scale-95 text-zinc-700 text-xs font-medium px-3 py-2 rounded-lg transition disabled:opacity-40 ${className}`;
+  if (href) return <Link href={href} className={cls}>{children}</Link>;
+  return <button type={type} onClick={onClick} disabled={disabled} className={cls}>{children}</button>;
 }
 
-/* ─── Card ────────────────────────────────────────────────── */
-
+/* ── Card ────────────────────────────────────────────────────────── */
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`bg-[--surface] border border-[--border] rounded-[--radius] ${className}`}>
+    <div className={`bg-white border border-zinc-200 rounded-xl ${className}`}>
       {children}
     </div>
   );
@@ -81,84 +55,58 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-[--border-subtle]">
-      <p className="text-xs font-semibold text-[--text-muted] uppercase tracking-wider">{title}</p>
-      {action}
+    <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
+      <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">{title}</p>
+      {action && <div>{action}</div>}
     </div>
   );
 }
-
-/* ─── Section (card with header) ──────────────────────────── */
 
 export function Section({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
   return (
     <Card className={`overflow-hidden ${className}`}>
       <CardHeader title={title} />
-      <div className="px-4 py-4">
-        {children}
-      </div>
+      <div className="px-4 py-4">{children}</div>
     </Card>
   );
 }
 
-/* ─── Page shell ──────────────────────────────────────────── */
-
-export function PageContainer({ children, narrow = false }: { children: ReactNode; narrow?: boolean }) {
+/* ── App Logo ────────────────────────────────────────────────────── */
+export function AppLogo() {
   return (
-    <div className={`${narrow ? "max-w-screen-md" : "max-w-screen-2xl"} mx-auto px-4 py-5 space-y-4`}>
-      {children}
-    </div>
-  );
-}
-
-/* ─── App Header ──────────────────────────────────────────── */
-
-export function AppLogo({ href = "/" }: { href?: string }) {
-  return (
-    <Link href={href} className="flex items-center gap-2.5 group">
-      <div className="w-6 h-6 rounded-md bg-[--accent] flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+    <Link href="/" className="flex items-center gap-2 group shrink-0">
+      <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
         C
       </div>
-      <div className="hidden sm:block">
-        <p className="text-sm font-semibold text-[--text] leading-none group-hover:text-[--accent] transition">
-          Concrete Works
-        </p>
-      </div>
+      <span className="text-sm font-semibold text-zinc-900 group-hover:text-orange-500 transition hidden sm:block">
+        Concrete Works
+      </span>
     </Link>
   );
 }
 
-/* ─── Empty state ─────────────────────────────────────────── */
-
+/* ── Empty state ─────────────────────────────────────────────────── */
 export function EmptyState({ message = "ไม่พบข้อมูล" }: { message?: string }) {
   return (
     <Card className="py-16 text-center">
-      <p className="text-sm text-[--text-faint]">{message}</p>
+      <p className="text-sm text-zinc-400">{message}</p>
     </Card>
   );
 }
 
-/* ─── Back button ─────────────────────────────────────────── */
-
-export function BackButton({ href }: { href: string }) {
+/* ── Icons ───────────────────────────────────────────────────────── */
+export function PlusIcon() {
   return (
-    <Link
-      href={href}
-      className="w-8 h-8 flex items-center justify-center rounded-[--radius-sm] hover:bg-[--border-subtle] active:bg-[--border] transition shrink-0"
-    >
-      <svg className="w-4 h-4 text-[--text-muted]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-    </Link>
+    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
   );
 }
 
-/* ─── Plus icon ───────────────────────────────────────────── */
-
-export function PlusIcon() {
+export function ChevronLeftIcon() {
   return (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
     </svg>
   );
 }

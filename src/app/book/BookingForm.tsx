@@ -17,8 +17,8 @@ const initialState: BookingState = {};
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card className="overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-[--border-subtle]">
-        <p className="text-[10px] font-semibold text-[--text-faint] uppercase tracking-widest">{title}</p>
+      <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{title}</p>
       </div>
       <div className="px-4 py-4 space-y-4">{children}</div>
     </Card>
@@ -26,7 +26,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>;
+  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>;
 }
 
 export default function BookingForm({ clients, locations, structures, concreteWorks, mixedCodes, wbsCodes, abcCodes }: Props) {
@@ -38,9 +38,7 @@ export default function BookingForm({ clients, locations, structures, concreteWo
   return (
     <form ref={formRef} action={action} className="space-y-3">
       {state.error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 rounded-[--radius] px-3 py-2.5 text-xs">
-          {state.error}
-        </div>
+        <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs">{state.error}</div>
       )}
 
       <Section title="ข้อมูลการขอ">
@@ -64,16 +62,19 @@ export default function BookingForm({ clients, locations, structures, concreteWo
       <Section title="ผู้ว่าจ้าง & รหัสโปรเจกต์">
         <div>
           <Label>ผู้ว่าจ้าง</Label>
-          <Select name="client_id" placeholder="-- เลือกผู้ว่าจ้าง --" options={clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" }))} />
+          <Select name="client_id" placeholder="— เลือกผู้ว่าจ้าง —"
+            options={clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" }))} />
         </div>
         <Row>
           <div>
             <Label>WBS Code</Label>
-            <Select name="wbs_code_id" placeholder="-- เลือก WBS Code --" options={wbsCodes.map((w) => ({ value: String(w.id), label: `${w.full_wbs ?? ""}${w.description ? ` — ${w.description}` : ""}` }))} />
+            <Select name="wbs_code_id" placeholder="— เลือก WBS Code —"
+              options={wbsCodes.map((w) => ({ value: String(w.id), label: `${w.full_wbs ?? ""}${w.description ? ` — ${w.description}` : ""}` }))} />
           </div>
           <div>
             <Label>ABC Code</Label>
-            <Select name="abc_code_id" placeholder="-- เลือก ABC Code --" options={abcCodes.map((a) => ({ value: String(a.id), label: `${a.full_abc ?? ""}${a.description ? ` — ${a.description}` : ""}` }))} />
+            <Select name="abc_code_id" placeholder="— เลือก ABC Code —"
+              options={abcCodes.map((a) => ({ value: String(a.id), label: `${a.full_abc ?? ""}${a.description ? ` — ${a.description}` : ""}` }))} />
           </div>
         </Row>
       </Section>
@@ -81,13 +82,15 @@ export default function BookingForm({ clients, locations, structures, concreteWo
       <Section title="สถานที่ & โครงสร้าง">
         <div>
           <Label required>สถานที่</Label>
-          <Select name="location_id" placeholder="-- เลือกสถานที่ --" required options={locations.map((l) => ({ value: String(l.id), label: l.full_location ?? l.description ?? `#${l.id}` }))} />
+          <Select name="location_id" placeholder="— เลือกสถานที่ —" required
+            options={locations.map((l) => ({ value: String(l.id), label: l.full_location ?? l.description ?? `#${l.id}` }))} />
           <FieldError msg={err.location_id} />
         </div>
         <Row>
           <div>
             <Label required>ประเภทโครงสร้าง</Label>
-            <Select name="structure_id" placeholder="-- เลือกประเภทโครงสร้าง --" required options={structures.map((s) => ({ value: String(s.id), label: s.structure_name ?? "" }))} />
+            <Select name="structure_id" placeholder="— เลือกประเภทโครงสร้าง —" required
+              options={structures.map((s) => ({ value: String(s.id), label: s.structure_name ?? "" }))} />
             <FieldError msg={err.structure_id} />
           </div>
           <div>
@@ -97,7 +100,8 @@ export default function BookingForm({ clients, locations, structures, concreteWo
         </Row>
         <div>
           <Label required>ประเภทงานคอนกรีต</Label>
-          <Select name="concrete_work_id" placeholder="-- เลือกประเภทงาน --" required options={concreteWorks.map((cw) => ({ value: String(cw.id), label: `${cw.concrete_work ?? ""}${cw.structure_list ? ` (${cw.structure_list})` : ""}` }))} />
+          <Select name="concrete_work_id" placeholder="— เลือกประเภทงาน —" required
+            options={concreteWorks.map((cw) => ({ value: String(cw.id), label: `${cw.concrete_work ?? ""}${cw.structure_list ? ` (${cw.structure_list})` : ""}` }))} />
           <FieldError msg={err.concrete_work_id} />
         </div>
       </Section>
@@ -105,12 +109,11 @@ export default function BookingForm({ clients, locations, structures, concreteWo
       <Section title="ข้อมูลคอนกรีต">
         <div>
           <Label required>Mix Code</Label>
-          <Select name="mixcode_id" placeholder="-- เลือก Mix Code --" required
+          <Select name="mixcode_id" placeholder="— เลือก Mix Code —" required
             options={mixedCodes.map((m) => ({
               value: String(m.id),
               label: [m.mixcode, m.strength ? `${m.strength} ${m.strength_type ?? "ksc"}` : null, m.slump ? `Slump ${m.slump}` : null, m.supplier ? `[${m.supplier}]` : null].filter(Boolean).join(" · "),
-            }))}
-          />
+            }))} />
           <FieldError msg={err.mixcode_id} />
         </div>
         <Row>
@@ -143,8 +146,8 @@ export default function BookingForm({ clients, locations, structures, concreteWo
         </div>
       </Section>
 
-      <div className="flex gap-2 justify-end pt-1">
-        <BtnGhost><a href="/">ยกเลิก</a></BtnGhost>
+      <div className="flex gap-2 justify-end pt-1 pb-4">
+        <BtnGhost href="/">ยกเลิก</BtnGhost>
         <BtnPrimary type="submit" disabled={pending}>
           {pending ? "กำลังบันทึก…" : "ยืนยันการจอง"}
         </BtnPrimary>
