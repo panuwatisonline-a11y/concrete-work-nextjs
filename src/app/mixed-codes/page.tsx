@@ -3,6 +3,7 @@ import { getMixedCodes, getVolumeByMixcode, getStructures } from "@/lib/supabase
 import type { MixedCode, MixcodeVolume, Structure } from "@/lib/supabase/queries";
 import TabNav from "@/components/TabNav";
 import { AddMixedCodeButton, EditMixedCodeButton } from "./MixedCodeActions";
+import { AppLogo, BtnPrimary, Card, PlusIcon } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -36,33 +37,17 @@ function VolumeBar({ used, total }: { used: number; total: number | null }) {
 function MixedCodeRow({ mc, structures }: { mc: MixedCodeWithVolume; structures: Structure[] }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors group">
-      <td className="px-4 py-3 font-mono text-xs font-semibold text-orange-600 whitespace-nowrap">
-        {mc.mixcode ?? "-"}
+    <tr className="hover:bg-[--border-subtle] transition-colors group">
+      <td className="px-4 py-2.5 font-mono text-xs font-medium text-[--accent] whitespace-nowrap">{mc.mixcode ?? "-"}</td>
+      <td className="px-4 py-2.5 text-xs text-[--text-muted] whitespace-nowrap">{mc.supplier ?? "-"}</td>
+      <td className="px-4 py-2.5 text-xs text-[--text-2] whitespace-nowrap">{mc.strength != null ? `${mc.strength} ${mc.strength_type ?? ""}` : "-"}</td>
+      <td className="px-4 py-2.5 text-xs text-[--text-2] whitespace-nowrap">{mc.slump ?? "-"}</td>
+      <td className="px-4 py-2.5 text-xs text-right tabular-nums text-[--text-2] whitespace-nowrap">{hasQty ? fmt(mc.qty!) : "-"}</td>
+      <td className="px-4 py-2.5 text-xs text-right tabular-nums text-[--text-2] whitespace-nowrap">{mc.volume_used > 0 ? fmt(mc.volume_used) : "-"}</td>
+      <td className="px-4 py-2.5 text-xs text-right tabular-nums whitespace-nowrap">
+        {hasQty ? <span className={mc.volume_remaining! < 0 ? "text-red-500 font-medium" : "text-green-600 font-medium"}>{fmt(mc.volume_remaining!)}</span> : "-"}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap">
-        {mc.supplier ?? "-"}
-      </td>
-      <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap">
-        {mc.strength != null ? `${mc.strength} ${mc.strength_type ?? ""}` : "-"}
-      </td>
-      <td className="px-4 py-3 text-xs text-gray-700 whitespace-nowrap">
-        {mc.slump ?? "-"}
-      </td>
-      <td className="px-4 py-3 text-xs text-right tabular-nums text-gray-700 whitespace-nowrap">
-        {hasQty ? fmt(mc.qty!) : "-"}
-      </td>
-      <td className="px-4 py-3 text-xs text-right tabular-nums text-gray-700 whitespace-nowrap">
-        {mc.volume_used > 0 ? fmt(mc.volume_used) : "-"}
-      </td>
-      <td className="px-4 py-3 text-xs text-right tabular-nums whitespace-nowrap">
-        {hasQty ? (
-          <span className={mc.volume_remaining! < 0 ? "text-red-600 font-semibold" : "text-green-700 font-semibold"}>
-            {fmt(mc.volume_remaining!)}
-          </span>
-        ) : "-"}
-      </td>
-      <td className="px-4 py-3 w-28">
+      <td className="px-4 py-2.5 w-28">
         {hasQty && (
           <div>
             <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
@@ -72,7 +57,7 @@ function MixedCodeRow({ mc, structures }: { mc: MixedCodeWithVolume; structures:
           </div>
         )}
       </td>
-      <td className="px-3 py-3 whitespace-nowrap">
+      <td className="px-3 py-2.5 whitespace-nowrap">
         <EditMixedCodeButton mc={mc} structures={structures} />
       </td>
     </tr>
@@ -84,14 +69,14 @@ function MixedCodeCard({ mc, structures }: { mc: MixedCodeWithVolume; structures
   const pct = hasQty ? Math.min(Math.round((mc.volume_used / mc.qty!) * 100), 100) : 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+    <div className="bg-[--surface] border border-[--border] rounded-[--radius] p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-sm font-bold text-orange-600">
+        <span className="font-mono text-sm font-medium text-[--accent]">
           {mc.mixcode ?? "-"}
         </span>
         <div className="flex items-center gap-2">
           {mc.supplier && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-[--text-faint] bg-[--border-subtle] px-2 py-0.5 rounded-full border border-[--border]">
               {mc.supplier}
             </span>
           )}
@@ -168,28 +153,10 @@ export default async function MixedCodesPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-xs">
-              C
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold text-gray-900 leading-none group-hover:text-orange-500 transition">
-                Concrete Works
-              </h1>
-              <p className="text-gray-500 text-[10px] mt-0.5">ระบบจัดการคำขอเทคอนกรีต</p>
-            </div>
-          </Link>
-          <Link
-            href="/book"
-            className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 active:scale-95 transition text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            จองคอนกรีต
-          </Link>
+      <header className="border-b border-[--border] bg-[--surface] sticky top-0 z-10">
+        <div className="max-w-screen-2xl mx-auto px-4 h-12 flex items-center justify-between">
+          <AppLogo />
+          <BtnPrimary href="/book"><PlusIcon />จองคอนกรีต</BtnPrimary>
         </div>
         <TabNav active="mixed-codes" />
       </header>
@@ -204,39 +171,26 @@ export default async function MixedCodesPage() {
         </div>
 
         {data.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-10 text-center text-gray-400 text-sm shadow-sm">
-            ไม่พบข้อมูล Mixed Code
-          </div>
+          <Card className="py-16 text-center">
+            <p className="text-sm text-[--text-faint]">ไม่พบข้อมูล Mixed Code</p>
+          </Card>
         ) : (
           <>
-            {/* Mobile: cards */}
             <div className="md:hidden space-y-2">
-              {data.map((mc) => (
-                <MixedCodeCard key={mc.id} mc={mc} structures={structures} />
-              ))}
+              {data.map((mc) => <MixedCodeCard key={mc.id} mc={mc} structures={structures} />)}
             </div>
-
-            {/* Desktop: table */}
-            <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="hidden md:block bg-[--surface] border border-[--border] rounded-[--radius] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mix Code</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Supplier</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">กำลัง</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Slump</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">ปริมาณ (m³)</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">เทแล้ว (m³)</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">คงเหลือ (m³)</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">การใช้งาน</th>
-                      <th className="px-3 py-3 w-10" />
+                    <tr className="border-b border-[--border] bg-[--bg]">
+                      {["Mix Code","Supplier","กำลัง","Slump","ปริมาณ (m³)","เทแล้ว (m³)","คงเหลือ (m³)","การใช้งาน",""].map((h, i) => (
+                        <th key={i} className={`px-4 py-2.5 text-[10px] font-semibold text-[--text-faint] uppercase tracking-widest whitespace-nowrap ${i >= 4 && i <= 6 ? "text-right" : ""} ${i === 7 ? "w-28" : ""} ${i === 8 ? "w-10" : ""}`}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.map((mc) => (
-                      <MixedCodeRow key={mc.id} mc={mc} structures={structures} />
-                    ))}
+                  <tbody className="divide-y divide-[--border-subtle]">
+                    {data.map((mc) => <MixedCodeRow key={mc.id} mc={mc} structures={structures} />)}
                   </tbody>
                 </table>
               </div>

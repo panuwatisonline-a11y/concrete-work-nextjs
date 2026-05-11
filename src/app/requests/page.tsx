@@ -2,15 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRequestsByStatus, getStatusList } from "@/lib/supabase/queries";
 import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
+import { AppLogo, Card } from "@/components/ui";
 
-export default async function RequestsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string }>;
-}) {
+export default async function RequestsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const params = await searchParams;
   const statusId = params.status ? Number(params.status) : null;
-
   if (!statusId || isNaN(statusId)) notFound();
 
   const [statuses, { data: requests, count }] = await Promise.all([
@@ -20,43 +16,38 @@ export default async function RequestsPage({
 
   const currentStatus = statuses.find((s) => s.id === statusId);
   if (!currentStatus) notFound();
-
   const style = STATUS_STYLES[statusId] ?? FALLBACK_STYLE;
 
   return (
-    <main className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3 group active:opacity-60 transition-opacity">
-            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
-              C
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900 leading-none group-hover:text-orange-500 transition">
-                Concrete Works
-              </h1>
-              <p className="text-gray-500 text-xs mt-0.5">ระบบจัดการคำขอเทคอนกรีต</p>
-            </div>
+    <main className="min-h-screen">
+      <header className="border-b border-[--border] bg-[--surface] sticky top-0 z-10">
+        <div className="max-w-screen-2xl mx-auto px-4 h-12 flex items-center gap-3">
+          <Link href="/" className="w-8 h-8 flex items-center justify-center rounded-[--radius-sm] hover:bg-[--border-subtle] transition shrink-0">
+            <svg className="w-4 h-4 text-[--text-muted]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </Link>
-          <span className="text-gray-300 mx-1">/</span>
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${style.badge}`}>
-            <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+          <AppLogo />
+          <span className="text-[--text-faint] text-xs">/</span>
+          <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-[--radius-sm] border text-xs font-medium ${style.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
             {currentStatus.status_name}
           </span>
         </div>
       </header>
 
-      <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-5">
-        {/* Count */}
+      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
-            รายการคำขอ
-          </h2>
-          <span className="text-gray-400 text-xs">{count.toLocaleString()} รายการ</span>
+          <p className="text-xs text-[--text-faint] uppercase tracking-wider">รายการคำขอ</p>
+          <span className="text-xs text-[--text-faint]">{count.toLocaleString()} รายการ</span>
         </div>
-
-        <RequestList requests={requests} variant="detailed" />
+        {requests.length === 0 ? (
+          <Card className="py-16 text-center">
+            <p className="text-sm text-[--text-faint]">ไม่พบรายการในสถานะนี้</p>
+          </Card>
+        ) : (
+          <RequestList requests={requests} variant="detailed" />
+        )}
       </div>
     </main>
   );
