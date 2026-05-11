@@ -1,16 +1,19 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function Home() {
+  const router = useRouter();
 
-  if (user) {
-    redirect("/dashboard");
-  }
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard");
+    });
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950">
@@ -124,7 +127,8 @@ export default async function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-800 py-6 px-4">
         <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
-          © {new Date().getFullYear()} Concrete Works Co., Ltd. All rights reserved.
+          © {new Date().getFullYear()} Concrete Works Co., Ltd. All rights
+          reserved.
         </div>
       </footer>
     </main>

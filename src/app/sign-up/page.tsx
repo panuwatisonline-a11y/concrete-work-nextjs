@@ -1,22 +1,30 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import SignUpForm from "./SignUpForm";
 
-export default async function SignUpPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+type Job = { id: number; job_name: string | null };
 
-  if (user) {
-    redirect("/profile");
-  }
+export default function SignUpPage() {
+  const router = useRouter();
+  const [jobs, setJobs] = useState<Job[]>([]);
 
-  const { data: jobs } = await supabase
-    .from("Jobs")
-    .select("id, job_name")
-    .order("id");
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard");
+    });
+
+    supabase
+      .from("Jobs")
+      .select("id, job_name")
+      .order("id")
+      .then(({ data }) => setJobs(data ?? []));
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950">
@@ -35,7 +43,8 @@ export default async function SignUpPage() {
             href="/sign-in"
             className="text-sm text-slate-400 hover:text-white transition-colors"
           >
-            มีบัญชีอยู่แล้ว? <span className="text-orange-400">ลงชื่อเข้าใช้</span>
+            มีบัญชีอยู่แล้ว?{" "}
+            <span className="text-orange-400">ลงชื่อเข้าใช้</span>
           </Link>
         </div>
       </nav>
@@ -66,7 +75,7 @@ export default async function SignUpPage() {
               </p>
             </div>
 
-            <SignUpForm jobs={jobs ?? []} />
+            <SignUpForm jobs={jobs} />
           </div>
 
           {/* Footer note */}

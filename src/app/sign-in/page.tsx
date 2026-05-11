@@ -1,17 +1,20 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import SignInForm from "./SignInForm";
 
-export default async function SignInPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function SignInPage() {
+  const router = useRouter();
 
-  if (user) {
-    redirect("/dashboard");
-  }
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard");
+    });
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950">

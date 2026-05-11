@@ -1,26 +1,67 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import EditProfileForm from "./EditProfileForm";
 
-export default async function EditProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+type Job = { id: number; job_name: string | null };
+type ProfileData = {
+  fname: string | null;
+  lname: string | null;
+  employee_id: string | null;
+  phone: string | null;
+  role: string | null;
+  job: number | null;
+};
 
-  if (!user) {
-    redirect("/sign-in");
-  }
+export default function EditProfilePage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [{ data: profile }, { data: jobs }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("fname, lname, employee_id, phone, role, Job")
-      .eq("id", user.id)
-      .single(),
-    supabase.from("Jobs").select("id, job_name").order("id"),
-  ]);
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function load() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.replace("/sign-in");
+        return;
+      }
+
+      const uid = session.user.id;
+      setUserId(uid);
+
+      const [{ data: profileData }, { data: jobsData }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("fname, lname, employee_id, phone, role, Job")
+          .eq("id", uid)
+          .single(),
+        supabase.from("Jobs").select("id, job_name").order("id"),
+      ]);
+
+      setProfile({
+        fname: profileData?.fname ?? null,
+        lname: profileData?.lname ?? null,
+        employee_id: profileData?.employee_id ?? null,
+        phone: profileData?.phone ?? null,
+        role: profileData?.role ?? null,
+        job: profileData?.Job ?? null,
+      });
+      setJobs(jobsData ?? []);
+      setLoading(false);
+    }
+
+    load();
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col bg-slate-950">
@@ -62,17 +103,17 @@ export default async function EditProfilePage() {
               </p>
             </div>
 
-            <EditProfileForm
-              initialData={{
-                fname: profile?.fname ?? null,
-                lname: profile?.lname ?? null,
-                employee_id: profile?.employee_id ?? null,
-                phone: profile?.phone ?? null,
-                role: profile?.role ?? null,
-                job: profile?.Job ?? null,
-              }}
-              jobs={jobs ?? []}
-            />
+            {loading ? (
+              <div className="py-12 text-center text-slate-500 text-sm">
+                กำลังโหลด...
+              </div>
+            ) : profile && userId ? (
+              <EditProfileForm
+                initialData={profile}
+                jobs={jobs}
+                userId={userId}
+              />
+            ) : null}
           </div>
         </div>
       </div>

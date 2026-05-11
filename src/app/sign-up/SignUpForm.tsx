@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signUp, type SignUpState } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 
 type Job = { id: number; job_name: string | null };
 
@@ -10,13 +11,78 @@ type Props = {
   jobs: Job[];
 };
 
-const initialState: SignUpState = {};
-
 export default function SignUpForm({ jobs }: Props) {
-  const [state, action, isPending] = useActionState(signUp, initialState);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    setError(null);
+
+    const data = new FormData(e.currentTarget);
+    const email = data.get("email") as string;
+    const password = data.get("password") as string;
+    const confirmPassword = data.get("confirmPassword") as string;
+    const fname = data.get("fname") as string;
+    const lname = data.get("lname") as string;
+    const employeeId = data.get("employee_id") as string;
+    const phone = data.get("phone") as string;
+    const role = data.get("role") as string;
+    const jobRaw = data.get("job") as string;
+    const job = jobRaw ? parseInt(jobRaw, 10) : null;
+
+    if (!email || !password || !fname || !lname) {
+      setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+      setIsPending(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("รหัสผ่านไม่ตรงกัน กรุณากรอกใหม่");
+      setIsPending(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+      setIsPending(false);
+      return;
+    }
+
+    const supabase = createClient();
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      { email, password }
+    );
+
+    if (signUpError) {
+      setError(
+        signUpError.message.includes("already registered")
+          ? "อีเมลนี้ถูกใช้งานแล้ว"
+          : "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง"
+      );
+      setIsPending(false);
+      return;
+    }
+
+    if (signUpData.user) {
+      await supabase.from("profiles").upsert({
+        id: signUpData.user.id,
+        fname: fname || null,
+        lname: lname || null,
+        employee_id: employeeId || null,
+        phone: phone || null,
+        role: role || null,
+        Job: job,
+      });
+    }
+
+    router.push("/dashboard");
+  }
 
   return (
-    <form action={action} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Name row */}
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -179,9 +245,9 @@ export default function SignUpForm({ jobs }: Props) {
         />
       </div>
 
-      {state.error && (
+      {error && (
         <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-          {state.error}
+          {error}
         </div>
       )}
 

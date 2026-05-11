@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
-import { updateProfile, type UpdateProfileState } from "@/app/actions/profile";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type Job = { id: number; job_name: string | null };
 
@@ -15,15 +16,57 @@ type Props = {
     job: number | null;
   };
   jobs: Job[];
+  userId: string;
 };
 
-const initialState: UpdateProfileState = {};
+export default function EditProfileForm({ initialData, jobs, userId }: Props) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
-export default function EditProfileForm({ initialData, jobs }: Props) {
-  const [state, action, isPending] = useActionState(updateProfile, initialState);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    setError(null);
+    setSuccess(false);
+
+    const data = new FormData(e.currentTarget);
+    const fname = data.get("fname") as string;
+    const lname = data.get("lname") as string;
+    const employeeId = data.get("employee_id") as string;
+    const phone = data.get("phone") as string;
+    const role = data.get("role") as string;
+    const jobRaw = data.get("job") as string;
+    const job = jobRaw ? parseInt(jobRaw, 10) : null;
+
+    const supabase = createClient();
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        fname: fname || null,
+        lname: lname || null,
+        employee_id: employeeId || null,
+        phone: phone || null,
+        role: role || null,
+        Job: job,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    if (updateError) {
+      setError("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่");
+      setIsPending(false);
+      return;
+    }
+
+    setSuccess(true);
+    setIsPending(false);
+    setTimeout(() => router.push("/profile"), 1000);
+  }
 
   return (
-    <form action={action} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label
@@ -129,13 +172,13 @@ export default function EditProfileForm({ initialData, jobs }: Props) {
         </select>
       </div>
 
-      {state.error && (
+      {error && (
         <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-          {state.error}
+          {error}
         </div>
       )}
 
-      {state.success && (
+      {success && (
         <div className="px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
           บันทึกข้อมูลเรียบร้อยแล้ว
         </div>
