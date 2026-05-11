@@ -28,7 +28,7 @@ export default async function RequestsPage({
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group active:opacity-60 transition-opacity">
             <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
               C
             </div>

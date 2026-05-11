@@ -277,14 +277,14 @@ export default function BookingForm({
       <div className="flex gap-3 justify-end pt-2">
         <a
           href="/"
-          className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-100 transition"
+          className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-100 active:bg-gray-200 active:scale-95 transition"
         >
           ยกเลิก
         </a>
         <button
           type="submit"
           disabled={pending}
-          className="px-6 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition shadow-sm"
+          className="px-6 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm transition shadow-sm"
         >
           {pending ? "กำลังบันทึก…" : "ยืนยันการจอง"}
         </button>

@@ -42,7 +42,7 @@ export function formatDate(d: string | null) {
 function RequestCard({ req }: { req: RequestView }) {
   const s = statusStyle(req.status_id);
   return (
-    <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3">
+    <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 active:bg-gray-50 transition-colors">
       {/* left: date + time */}
       <div className="shrink-0 text-center w-16">
         <p className="text-xs font-semibold text-gray-900 leading-tight tabular-nums">
@@ -114,7 +114,7 @@ function RequestRow({ req }: { req: RequestView }) {
 function RequestCardDetailed({ req }: { req: RequestView }) {
   const s = statusStyle(req.status_id);
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 active:bg-gray-50 transition-colors">
       {/* top row */}
       <div className="flex items-start justify-between gap-2">
         <div>

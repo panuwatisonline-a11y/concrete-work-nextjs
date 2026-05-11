@@ -18,7 +18,7 @@ function StatusRow({
   return (
     <Link
       href={`/requests?status=${statusId}`}
-      className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 -mx-5 px-5 transition-colors group"
+      className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 active:bg-orange-50 -mx-5 px-5 transition-colors group"
     >
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`} />
       <span className="text-gray-700 text-sm flex-1 min-w-0 truncate group-hover:text-gray-900 transition-colors">{label}</span>
@@ -68,7 +68,7 @@ export default async function Home({
           </div>
           <Link
             href="/book"
-            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm"
+            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 active:scale-95 transition text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
