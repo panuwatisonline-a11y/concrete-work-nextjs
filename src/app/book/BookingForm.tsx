@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { createBooking, type BookingState } from "./actions";
+import { Select } from "@/components/Select";
 import type {
   Client,
   Location,
@@ -40,21 +41,6 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
 
 const inputCls =
   "w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition placeholder-gray-400 disabled:opacity-50";
-const selectCls =
-  "w-full appearance-none bg-white border border-gray-300 text-gray-900 rounded-lg pl-3 pr-9 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition disabled:opacity-50 cursor-pointer";
-
-function SelectWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative">
-      {children}
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
-    </div>
-  );
-}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -118,41 +104,34 @@ export default function BookingForm({
       <Section title="ผู้ว่าจ้าง & รหัสโปรเจกต์">
         <div>
           <Label>ผู้ว่าจ้าง</Label>
-          <SelectWrapper>
-            <select name="client_id" className={selectCls}>
-              <option value="">-- เลือกผู้ว่าจ้าง --</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.client_name}</option>
-              ))}
-            </select>
-          </SelectWrapper>
+          <Select
+            name="client_id"
+            placeholder="-- เลือกผู้ว่าจ้าง --"
+            options={clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" }))}
+          />
         </div>
         <Row>
           <div>
             <Label>WBS Code</Label>
-            <SelectWrapper>
-              <select name="wbs_code_id" className={selectCls}>
-                <option value="">-- เลือก WBS Code --</option>
-                {wbsCodes.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.full_wbs}{w.description ? ` - ${w.description}` : ""}
-                  </option>
-                ))}
-              </select>
-            </SelectWrapper>
+            <Select
+              name="wbs_code_id"
+              placeholder="-- เลือก WBS Code --"
+              options={wbsCodes.map((w) => ({
+                value: String(w.id),
+                label: `${w.full_wbs ?? ""}${w.description ? ` — ${w.description}` : ""}`,
+              }))}
+            />
           </div>
           <div>
             <Label>ABC Code</Label>
-            <SelectWrapper>
-              <select name="abc_code_id" className={selectCls}>
-                <option value="">-- เลือก ABC Code --</option>
-                {abcCodes.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.full_abc}{a.description ? ` - ${a.description}` : ""}
-                  </option>
-                ))}
-              </select>
-            </SelectWrapper>
+            <Select
+              name="abc_code_id"
+              placeholder="-- เลือก ABC Code --"
+              options={abcCodes.map((a) => ({
+                value: String(a.id),
+                label: `${a.full_abc ?? ""}${a.description ? ` — ${a.description}` : ""}`,
+              }))}
+            />
           </div>
         </Row>
       </Section>
@@ -161,29 +140,26 @@ export default function BookingForm({
       <Section title="สถานที่ & โครงสร้าง">
         <div>
           <Label required>สถานที่</Label>
-          <SelectWrapper>
-            <select name="location_id" className={selectCls} required>
-              <option value="">-- เลือกสถานที่ --</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.full_location ?? l.description ?? `#${l.id}`}
-                </option>
-              ))}
-            </select>
-          </SelectWrapper>
+          <Select
+            name="location_id"
+            placeholder="-- เลือกสถานที่ --"
+            required
+            options={locations.map((l) => ({
+              value: String(l.id),
+              label: l.full_location ?? l.description ?? `#${l.id}`,
+            }))}
+          />
           <FieldError msg={err.location_id} />
         </div>
         <Row>
           <div>
             <Label required>ประเภทโครงสร้าง</Label>
-            <SelectWrapper>
-              <select name="structure_id" className={selectCls} required>
-                <option value="">-- เลือกประเภทโครงสร้าง --</option>
-                {structures.map((s) => (
-                  <option key={s.id} value={s.id}>{s.structure_name}</option>
-                ))}
-              </select>
-            </SelectWrapper>
+            <Select
+              name="structure_id"
+              placeholder="-- เลือกประเภทโครงสร้าง --"
+              required
+              options={structures.map((s) => ({ value: String(s.id), label: s.structure_name ?? "" }))}
+            />
             <FieldError msg={err.structure_id} />
           </div>
           <div>
@@ -198,16 +174,15 @@ export default function BookingForm({
         </Row>
         <div>
           <Label required>ประเภทงานคอนกรีต</Label>
-          <SelectWrapper>
-            <select name="concrete_work_id" className={selectCls} required>
-              <option value="">-- เลือกประเภทงาน --</option>
-              {concreteWorks.map((cw) => (
-                <option key={cw.id} value={cw.id}>
-                  {cw.concrete_work}{cw.structure_list ? ` (${cw.structure_list})` : ""}
-                </option>
-              ))}
-            </select>
-          </SelectWrapper>
+          <Select
+            name="concrete_work_id"
+            placeholder="-- เลือกประเภทงาน --"
+            required
+            options={concreteWorks.map((cw) => ({
+              value: String(cw.id),
+              label: `${cw.concrete_work ?? ""}${cw.structure_list ? ` (${cw.structure_list})` : ""}`,
+            }))}
+          />
           <FieldError msg={err.concrete_work_id} />
         </div>
       </Section>
@@ -216,19 +191,22 @@ export default function BookingForm({
       <Section title="ข้อมูลคอนกรีต">
         <div>
           <Label required>Mix Code</Label>
-          <SelectWrapper>
-            <select name="mixcode_id" className={selectCls} required>
-              <option value="">-- เลือก Mix Code --</option>
-              {mixedCodes.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.mixcode}
-                  {m.strength ? ` — ${m.strength} ${m.strength_type ?? ""}` : ""}
-                  {m.slump ? ` / Slump ${m.slump}` : ""}
-                  {m.supplier ? ` [${m.supplier}]` : ""}
-                </option>
-              ))}
-            </select>
-          </SelectWrapper>
+          <Select
+            name="mixcode_id"
+            placeholder="-- เลือก Mix Code --"
+            required
+            options={mixedCodes.map((m) => ({
+              value: String(m.id),
+              label: [
+                m.mixcode,
+                m.strength ? `${m.strength} ${m.strength_type ?? "ksc"}` : null,
+                m.slump ? `Slump ${m.slump}` : null,
+                m.supplier ? `[${m.supplier}]` : null,
+              ]
+                .filter(Boolean)
+                .join(" · "),
+            }))}
+          />
           <FieldError msg={err.mixcode_id} />
         </div>
         <Row>
