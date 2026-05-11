@@ -30,7 +30,7 @@ export async function signIn(
     return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
   }
 
-  redirect("/profile");
+  redirect("/dashboard");
 }
 
 export async function signUp(
@@ -86,7 +86,7 @@ export async function signUp(
     });
   }
 
-  redirect("/profile");
+  redirect("/dashboard");
 }
 
 export async function signOut() {
