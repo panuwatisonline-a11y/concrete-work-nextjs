@@ -1,130 +1,135 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { getRequests, getStatusSummary } from "@/lib/supabase/queries";
+import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
 
-export default function Home() {
-  const router = useRouter();
+function StatusRow({
+  statusId,
+  label,
+  value,
+  total,
+}: {
+  statusId: number;
+  label: string;
+  value: number;
+  total: number;
+}) {
+  const s = STATUS_STYLES[statusId] ?? FALLBACK_STYLE;
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <Link
+      href={`/requests?status=${statusId}`}
+      className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 -mx-5 px-5 transition-colors group"
+    >
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`} />
+      <span className="text-gray-700 text-sm flex-1 min-w-0 truncate group-hover:text-gray-900 transition-colors">{label}</span>
+      <div className="hidden sm:block flex-1 max-w-48">
+        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+          <div className={`h-full rounded-full ${s.bar}`} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={`text-lg font-bold w-12 text-right ${value > 0 ? "text-gray-900" : "text-gray-300"}`}>
+          {value.toLocaleString()}
+        </span>
+        <svg className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </Link>
+  );
+}
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace("/dashboard");
-    });
-  }, [router]);
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string }>;
+}) {
+  const [{ data: requests, count }, statusSummary, params] = await Promise.all([
+    getRequests(100),
+    getStatusSummary(),
+    searchParams,
+  ]);
+
+  const successId = params.success;
 
   return (
-    <main className="min-h-screen flex flex-col bg-slate-950">
-      <nav className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+    <main className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
+        <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center font-bold text-white text-sm">
-              CW
+            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+              C
             </div>
-            <span className="font-semibold text-white tracking-wide">
-              Concrete Works
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900 leading-none">Concrete Works</h1>
+              <p className="text-gray-500 text-xs mt-0.5">ระบบจัดการคำขอเทคอนกรีต</p>
+            </div>
+          </div>
+          <Link
+            href="/book"
+            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 transition text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            จองคอนกรีต
+          </Link>
+        </div>
+      </header>
+
+      <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
+        {/* Success banner */}
+        {successId && (
+          <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-5 py-4 flex items-center gap-3">
+            <svg className="w-5 h-5 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="font-semibold text-sm">จองคอนกรีตสำเร็จ!</p>
+              <p className="text-xs text-green-600 font-mono mt-0.5">Request ID: {successId}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Stats */}
+        <section>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-sm font-semibold text-gray-900">ภาพรวมสถานะ</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 text-xs">ทั้งหมด</span>
+                <span className="text-xl font-bold text-orange-500">{count.toLocaleString()}</span>
+                <span className="text-gray-400 text-xs">รายการ</span>
+              </div>
+            </div>
+            <div className="px-5">
+              {statusSummary.map((s) => (
+                <StatusRow
+                  key={s.status_id}
+                  statusId={s.status_id}
+                  label={s.status_name}
+                  value={s.count}
+                  total={count}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Requests Table */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-gray-500 text-sm font-medium uppercase tracking-wider">
+              รายการคำขอล่าสุด
+            </h2>
+            <span className="text-gray-400 text-xs">
+              แสดง {requests.length} จาก {count.toLocaleString()} รายการ
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/sign-in"
-              className="px-4 py-2 text-sm text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-lg transition-colors"
-            >
-              ลงชื่อเข้าใช้
-            </Link>
-            <Link
-              href="/sign-up"
-              className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-400 text-white font-medium rounded-lg transition-colors"
-            >
-              สมัครใช้งาน
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <section className="flex-1 flex items-center justify-center px-4 py-24 relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg,transparent,transparent 39px,#475569 39px,#475569 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,#475569 39px,#475569 40px)",
-          }}
-        />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500/10 border border-orange-500/30 rounded-2xl mb-6">
-            <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white text-base">
-              CW
-            </div>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
-            ระบบจัดการงาน
-            <br />
-            <span className="text-orange-500">Concrete Works</span>
-          </h1>
-          <p className="text-slate-400 text-lg mb-10 leading-relaxed">
-            ระบบบริหารจัดการงานก่อสร้างคอนกรีต สำหรับทีมงานภาคสนาม
-            <br className="hidden sm:block" />
-            ติดตามคำขอ ตรวจสอบสถานะ และบริหารทีมในที่เดียว
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/sign-up"
-              className="px-8 py-4 bg-orange-500 hover:bg-orange-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/20 text-base"
-            >
-              สมัครใช้งาน
-            </Link>
-            <Link
-              href="/sign-in"
-              className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition-all text-base"
-            >
-              ลงชื่อเข้าใช้
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-800 py-16 px-4 bg-slate-900/50">
-        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-6 text-center">
-          {[
-            {
-              icon: "📋",
-              title: "จัดการคำขอ",
-              desc: "ยื่น ติดตาม และอนุมัติคำขอเทคอนกรีตได้ทุกที่ทุกเวลา",
-            },
-            {
-              icon: "👥",
-              title: "บริหารทีมงาน",
-              desc: "กำหนดบทบาทและสิทธิ์การเข้าถึงให้กับสมาชิกในทีม",
-            },
-            {
-              icon: "📊",
-              title: "รายงานสถานะ",
-              desc: "ดูภาพรวมงานก่อสร้างแบบ Real-time ครบในหน้าเดียว",
-            },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="p-6 rounded-2xl bg-slate-900 border border-slate-800"
-            >
-              <div className="text-3xl mb-3">{f.icon}</div>
-              <h3 className="font-bold text-white mb-2">{f.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <footer className="border-t border-slate-800 py-6 px-4">
-        <div className="max-w-7xl mx-auto text-center text-slate-500 text-sm">
-          © {new Date().getFullYear()} Concrete Works Co., Ltd. All rights reserved.
-        </div>
-      </footer>
+          <RequestList requests={requests} />
+        </section>
+      </div>
     </main>
   );
 }
