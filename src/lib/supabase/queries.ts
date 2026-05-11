@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createReadonlyClient } from "@/lib/supabase/readonly";
 import type { Tables } from "@/types/database.types";
 
 export type RequestView = Tables<"Request_View">;
@@ -14,11 +15,11 @@ export type ABCCode = Tables<"ABC Code">;
 export type WBSCode = Tables<"WBS Code">;
 export type CompressionMachine = Tables<"Compression Machine">;
 
-export async function getRequests(limit = 50, offset = 0) {
-  const supabase = await createClient();
+async function _getRequests(limit: number, offset: number) {
+  const supabase = createReadonlyClient();
   const { data, error, count } = await supabase
     .from("Request_View")
-    .select("*", { count: "exact" })
+    .select("*", { count: "estimated" })
     .order("created_at", { ascending: false, nullsFirst: false })
     .order("request_date", { ascending: false, nullsFirst: false })
     .range(offset, offset + limit - 1);
@@ -27,8 +28,14 @@ export async function getRequests(limit = 50, offset = 0) {
   return { data: data ?? [], count: count ?? 0 };
 }
 
-export async function getRequestsByStatus(statusId: number, limit = 200, offset = 0) {
-  const supabase = await createClient();
+export const getRequests = unstable_cache(
+  _getRequests,
+  ["requests"],
+  { tags: ["requests"], revalidate: 60 }
+);
+
+async function _getRequestsByStatus(statusId: number, limit: number, offset: number) {
+  const supabase = createReadonlyClient();
   const { data, error, count } = await supabase
     .from("Request_View")
     .select("*", { count: "exact" })
@@ -41,46 +48,71 @@ export async function getRequestsByStatus(statusId: number, limit = 200, offset 
   return { data: data ?? [], count: count ?? 0 };
 }
 
-export async function getRequestById(id: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Request_View")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) throw error;
-  return data;
+export function getRequestsByStatus(statusId: number, limit = 200, offset = 0) {
+  return unstable_cache(
+    () => _getRequestsByStatus(statusId, limit, offset),
+    [`requests-status-${statusId}-${limit}-${offset}`],
+    { tags: ["requests", `requests-status-${statusId}`], revalidate: 60 }
+  )();
 }
 
-export async function getStatusList() {
-  const supabase = await createClient();
+export async function getRequestById(id: string) {
+  return unstable_cache(
+    async () => {
+      const supabase = createReadonlyClient();
+      const { data, error } = await supabase
+        .from("Request_View")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    [`request-${id}`],
+    { tags: ["requests", `request-${id}`], revalidate: 60 }
+  )();
+}
+
+async function _getStatusList() {
+  const supabase = createReadonlyClient();
   const { data, error } = await supabase
     .from("Status")
     .select("*")
     .order("id");
-
   if (error) throw error;
   return data ?? [];
 }
 
-export async function getStatusSummary() {
-  const supabase = await createClient();
+export const getStatusList = unstable_cache(
+  _getStatusList,
+  ["statuses"],
+  { tags: ["statuses"], revalidate: 3600 }
+);
 
-  const [{ data: statuses, error: statusErr }, { data: counts, error: countErr }] =
-    await Promise.all([
-      supabase.from("Status").select("id, status_name").order("id"),
-      supabase.from("Request_View").select("status_id"),
-    ]);
+async function _getStatusSummary() {
+  const supabase = createReadonlyClient();
+
+  const { data: statuses, error: statusErr } = await supabase
+    .from("Status")
+    .select("id, status_name")
+    .order("id");
 
   if (statusErr) throw statusErr;
-  if (countErr) throw countErr;
+
+  // Parallel HEAD count requests per status — no rows transferred
+  const counts = await Promise.all(
+    (statuses ?? []).map((s) =>
+      supabase
+        .from("Request_View")
+        .select("*", { count: "exact", head: true })
+        .eq("status_id", s.id)
+        .then(({ count }) => ({ status_id: s.id, count: count ?? 0 }))
+    )
+  );
 
   const countMap: Record<number, number> = {};
-  for (const row of counts ?? []) {
-    if (row.status_id != null) {
-      countMap[row.status_id] = (countMap[row.status_id] ?? 0) + 1;
-    }
+  for (const { status_id, count } of counts) {
+    countMap[status_id] = count;
   }
 
   return (statuses ?? []).map((s) => ({
@@ -90,112 +122,88 @@ export async function getStatusSummary() {
   }));
 }
 
-export async function getLocations() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Location")
-    .select("*")
-    .order("full_location");
+export const getStatusSummary = unstable_cache(
+  _getStatusSummary,
+  ["status-summary"],
+  { tags: ["requests", "statuses"], revalidate: 60 }
+);
 
+async function _getLocations() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Location").select("*").order("full_location");
   if (error) throw error;
   return data ?? [];
 }
+export const getLocations = unstable_cache(_getLocations, ["locations"], { tags: ["locations"], revalidate: 3600 });
 
-export async function getStructures() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Structure")
-    .select("*")
-    .order("structure_name");
-
+async function _getStructures() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Structure").select("*").order("structure_name");
   if (error) throw error;
   return data ?? [];
 }
+export const getStructures = unstable_cache(_getStructures, ["structures"], { tags: ["structures"], revalidate: 3600 });
 
-export async function getClients() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Client")
-    .select("*")
-    .order("client_name");
-
+async function _getClients() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Client").select("*").order("client_name");
   if (error) throw error;
   return data ?? [];
 }
+export const getClients = unstable_cache(_getClients, ["clients"], { tags: ["clients"], revalidate: 3600 });
 
-export async function getMixedCodes() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Mixed Code")
-    .select("*")
-    .order("mixcode");
-
+async function _getMixedCodes() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Mixed Code").select("*").order("mixcode");
   if (error) throw error;
   return data ?? [];
 }
+export const getMixedCodes = unstable_cache(_getMixedCodes, ["mixcodes"], { tags: ["mixcodes"], revalidate: 3600 });
 
-export async function getConcreteWorks() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Concrete Works")
-    .select("*")
-    .order("concrete_work");
-
+async function _getConcreteWorks() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Concrete Works").select("*").order("concrete_work");
   if (error) throw error;
   return data ?? [];
 }
+export const getConcreteWorks = unstable_cache(_getConcreteWorks, ["concrete-works"], { tags: ["concrete-works"], revalidate: 3600 });
 
-export async function getProfiles() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("fname");
-
+async function _getProfiles() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("profiles").select("*").order("fname");
   if (error) throw error;
   return data ?? [];
 }
+export const getProfiles = unstable_cache(_getProfiles, ["profiles"], { tags: ["profiles"], revalidate: 3600 });
 
-export async function getJobs() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Jobs")
-    .select("*")
-    .order("job_name");
-
+async function _getJobs() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Jobs").select("*").order("job_name");
   if (error) throw error;
   return data ?? [];
 }
+export const getJobs = unstable_cache(_getJobs, ["jobs"], { tags: ["jobs"], revalidate: 3600 });
 
-export async function getABCCodes() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("ABC Code")
-    .select("*")
-    .order("full_abc");
-
+async function _getABCCodes() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("ABC Code").select("*").order("full_abc");
   if (error) throw error;
   return data ?? [];
 }
+export const getABCCodes = unstable_cache(_getABCCodes, ["abc-codes"], { tags: ["abc-codes"], revalidate: 3600 });
 
-export async function getWBSCodes() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("WBS Code")
-    .select("*")
-    .order("full_wbs");
-
+async function _getWBSCodes() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("WBS Code").select("*").order("full_wbs");
   if (error) throw error;
   return data ?? [];
 }
+export const getWBSCodes = unstable_cache(_getWBSCodes, ["wbs-codes"], { tags: ["wbs-codes"], revalidate: 3600 });
 
-export async function getCompressionMachines() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("Compression Machine")
-    .select("*")
-    .order("machine");
-
+async function _getCompressionMachines() {
+  const supabase = createReadonlyClient();
+  const { data, error } = await supabase.from("Compression Machine").select("*").order("machine");
   if (error) throw error;
   return data ?? [];
 }
+export const getCompressionMachines = unstable_cache(_getCompressionMachines, ["compression-machines"], { tags: ["compression-machines"], revalidate: 3600 });

@@ -45,7 +45,7 @@ export default async function Home({
   searchParams: Promise<{ success?: string }>;
 }) {
   const [{ data: requests, count }, statusSummary, params] = await Promise.all([
-    getRequests(100),
+    getRequests(100, 0),
     getStatusSummary(),
     searchParams,
   ]);

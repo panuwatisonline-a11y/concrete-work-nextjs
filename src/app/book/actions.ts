@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidateTag, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type BookingState = {
@@ -83,6 +83,7 @@ export async function createBooking(
     note: "สร้างคำขอใหม่",
   });
 
+  revalidateTag("requests", { expire: 0 });
   revalidatePath("/");
   redirect(`/?success=${inserted.id}`);
 }
