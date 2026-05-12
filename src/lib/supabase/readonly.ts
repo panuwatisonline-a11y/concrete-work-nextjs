@@ -16,6 +16,11 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(publicSupabaseUrl() && publicSupabaseAnonKey());
 }
 
+/** Service role key — server only; used for signup without email confirmation. */
+export function isServiceRoleConfigured(): boolean {
+  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}
+
 /**
  * A cookie-free Supabase client for use inside `use cache` scopes.
  * Safe for read-only queries against public/anon-accessible tables.

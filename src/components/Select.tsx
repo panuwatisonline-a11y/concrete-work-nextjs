@@ -12,6 +12,7 @@ export function Select({
   required,
   defaultValue = "",
   onValueChange,
+  disabled,
 }: {
   name: string;
   options: SelectOption[];
@@ -19,6 +20,7 @@ export function Select({
   required?: boolean;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -50,6 +52,10 @@ export function Select({
   }, [open]);
 
   useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  useEffect(() => {
     function handler(e: MouseEvent) {
       const t = e.target as Node;
       if (containerRef.current?.contains(t)) return;
@@ -63,6 +69,7 @@ export function Select({
   const menu =
     open &&
     menuPos &&
+    !disabled &&
     createPortal(
       <div
         ref={menuRef}
@@ -118,10 +125,12 @@ export function Select({
       <button
         type="button"
         id={id}
-        onClick={() => setOpen((v) => !v)}
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((v) => !v)}
         className={[
           "w-full flex items-center justify-between gap-2 bg-white border rounded-lg pl-3 pr-2.5 py-2 text-sm text-left transition focus:outline-none focus:ring-2 focus:ring-zinc-100",
-          open ? "border-zinc-400" : "border-zinc-200 hover:border-zinc-300",
+          disabled ? "opacity-50 cursor-not-allowed bg-zinc-50" : "",
+          open && !disabled ? "border-zinc-400" : "border-zinc-200 hover:border-zinc-300",
           selected ? "text-zinc-900" : "text-zinc-300",
         ].join(" ")}
       >

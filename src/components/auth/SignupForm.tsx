@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { signupWithImmediateAccess } from "@/app/signup/actions";
 import { Select } from "@/components/Select";
 import { BtnPrimary, FieldError, inputCls, Label } from "@/components/ui";
 
@@ -21,13 +21,14 @@ function digitsOnly(s: string): string {
 export default function SignupForm({
   jobs,
   clients,
+  serviceRoleReady,
 }: {
   jobs: JobOption[];
   clients: ClientOption[];
+  serviceRoleReady: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const jobSelectOptions = useMemo(
@@ -51,7 +52,6 @@ export default function SignupForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
     setLoading(true);
 
     const form = e.currentTarget;
@@ -114,9 +114,6 @@ export default function SignupForm({
       setError("บริษัท/ผู้รับเหมาที่เลือกไม่ถูกต้อง");
       return;
     }
-    const clientNameStored =
-      clients.find((c) => c.id === clientId)?.client_name?.trim() || null;
-
     if (password.length < 6) {
       setLoading(false);
       setError("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
@@ -128,74 +125,42 @@ export default function SignupForm({
       return;
     }
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const supabase = createClient();
-    const { data, error: err } = await supabase.auth.signUp({
+    const result = await signupWithImmediateAccess({
+      fname,
+      lname,
+      phone: phoneRaw,
+      jobId: Job,
+      employeeId,
+      clientId,
       email,
       password,
-      options: {
-        emailRedirectTo: origin ? `${origin}/auth/callback?next=/profile` : undefined,
-        data: {
-          fname,
-          lname,
-          phone: phoneRaw,
-          job_id: String(Job),
-          employee_id: employeeId,
-          client_id: String(clientId),
-        },
-      },
     });
-
-    if (err) {
-      setLoading(false);
-      setError(err.message);
-      return;
-    }
-
-    if (data.user && data.session) {
-      const { error: upErr } = await supabase
-        .from("profiles")
-        .update({
-          fname,
-          lname,
-          phone: phoneRaw,
-          Job,
-          employee_id: employeeId,
-          client_id: clientId,
-          client_name: clientNameStored,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", data.user.id);
-
-      if (upErr) {
-        setLoading(false);
-        setError(upErr.message);
-        return;
-      }
-    }
 
     setLoading(false);
 
-    if (data.session) {
-      router.refresh();
-      router.push("/profile");
+    if (result.error) {
+      setError(result.error);
       return;
     }
 
-    setSuccess(
-      "สมัครสมาชิกแล้ว หากโปรเจกต์เปิดยืนยันอีเมล กรุณาคลิกลิงก์ในอีเมลก่อนเข้าสู่ระบบ — หลังเข้าสู่ระบบแล้วข้อมูลโปรไฟล์จะแสดงตามที่กรอกไว้",
-    );
+    router.refresh();
+    router.push("/profile");
   }
 
   const noJobs = jobs.length === 0;
   const noClients = clients.length === 0;
-  const blocked = noJobs || noClients;
+  const blocked = noJobs || noClients || !serviceRoleReady;
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {success ? (
-        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 leading-relaxed">
-          {success}
+      {!serviceRoleReady ? (
+        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 leading-relaxed">
+          การสมัครแบบเข้าใช้งานทันทีต้องตั้งค่า{" "}
+          <code className="text-xs bg-amber-100/80 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
+          ในไฟล์ <code className="text-xs bg-amber-100/80 px-1 rounded">.env.local</code> และใน Vercel →
+          Settings → Environment Variables (คัดลอกจาก Supabase → Project Settings → API →{" "}
+          <code className="text-xs bg-amber-100/80 px-1 rounded">service_role</code> ห้ามใส่ในโค้ดฝั่ง
+          client)
         </p>
       ) : null}
       {noJobs ? (
@@ -215,7 +180,7 @@ export default function SignupForm({
           type="text"
           autoComplete="given-name"
           required
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="ชื่อจริง"
         />
@@ -227,7 +192,7 @@ export default function SignupForm({
           type="text"
           autoComplete="family-name"
           required
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="นามสกุล"
         />
@@ -240,7 +205,7 @@ export default function SignupForm({
           autoComplete="tel"
           inputMode="tel"
           required
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="เช่น 0812345678"
         />
@@ -252,6 +217,7 @@ export default function SignupForm({
           options={jobSelectOptions}
           placeholder="— เลือกโครงการ —"
           required
+          disabled={loading || blocked}
         />
       </div>
       <div>
@@ -261,7 +227,7 @@ export default function SignupForm({
           type="text"
           autoComplete="username"
           required
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="รหัสพนักงาน"
         />
@@ -273,6 +239,7 @@ export default function SignupForm({
           options={clientSelectOptions}
           placeholder="— เลือกบริษัท/ผู้รับเหมา —"
           required
+          disabled={loading || blocked}
         />
       </div>
       <div>
@@ -282,7 +249,7 @@ export default function SignupForm({
           type="email"
           autoComplete="email"
           required
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="you@example.com"
         />
@@ -295,7 +262,7 @@ export default function SignupForm({
           autoComplete="new-password"
           required
           minLength={6}
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="อย่างน้อย 6 ตัวอักษร"
         />
@@ -308,21 +275,19 @@ export default function SignupForm({
           autoComplete="new-password"
           required
           minLength={6}
-          disabled={loading || Boolean(success) || blocked}
+          disabled={loading || blocked}
           className={inputCls}
           placeholder="กรอกรหัสผ่านอีกครั้ง"
         />
       </div>
       <FieldError msg={error ?? undefined} />
-      {!success ? (
-        <BtnPrimary
-          type="submit"
-          disabled={loading || blocked}
-          className="w-full justify-center py-2.5 text-sm"
-        >
-          {loading ? "กำลังสมัคร…" : "สร้างบัญชี"}
-        </BtnPrimary>
-      ) : null}
+      <BtnPrimary
+        type="submit"
+        disabled={loading || blocked}
+        className="w-full justify-center py-2.5 text-sm"
+      >
+        {loading ? "กำลังสมัคร…" : "สร้างบัญชี"}
+      </BtnPrimary>
       <p className="text-sm text-center text-zinc-500">
         มีบัญชีแล้ว?{" "}
         <Link href="/" className="text-orange-600 font-medium hover:underline">

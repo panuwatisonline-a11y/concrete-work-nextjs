@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/readonly";
+import { isSupabaseConfigured, isServiceRoleConfigured } from "@/lib/supabase/readonly";
 import SignupForm from "@/components/auth/SignupForm";
 import { AppLogo, Card } from "@/components/ui";
 
@@ -47,7 +47,7 @@ export default async function SignupPage() {
           <h1 className="text-lg font-semibold text-zinc-900">สมัครสมาชิก</h1>
         </div>
         <Card className="p-6 shadow-sm shadow-zinc-900/5">
-          <SignupForm jobs={jobs} clients={clients} />
+          <SignupForm jobs={jobs} clients={clients} serviceRoleReady={isServiceRoleConfigured()} />
         </Card>
         <p className="text-sm text-center text-zinc-500">
           <Link href="/" className="text-orange-600 font-medium hover:underline">
