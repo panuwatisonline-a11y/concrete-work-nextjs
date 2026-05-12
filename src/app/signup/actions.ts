@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -128,8 +127,5 @@ export async function signupWithImmediateAccess(
     return { error: upErr.message };
   }
 
-  revalidatePath("/profile");
-  revalidatePath("/signup");
-  revalidatePath("/");
   return { success: true };
 }

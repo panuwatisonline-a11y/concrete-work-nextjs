@@ -1,10 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidateTag } from "next/cache";
-import { redirect } from "next/navigation";
 
 export type MixedCodeState = {
+  success?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
 };
@@ -40,8 +39,7 @@ export async function createMixedCode(
   const { error } = await supabase.from("Mixed Code").insert(data);
   if (error) return { error: `บันทึกไม่สำเร็จ: ${error.message}` };
 
-  revalidateTag("mixcodes", { expire: 0 });
-  redirect("/mixed-codes");
+  return { success: true };
 }
 
 export async function updateMixedCode(
@@ -59,6 +57,5 @@ export async function updateMixedCode(
   const { error } = await supabase.from("Mixed Code").update(data).eq("id", id);
   if (error) return { error: `แก้ไขไม่สำเร็จ: ${error.message}` };
 
-  revalidateTag("mixcodes", { expire: 0 });
-  redirect("/mixed-codes");
+  return { success: true };
 }

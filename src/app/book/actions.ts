@@ -1,11 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidateTag, revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 export type BookingState = {
   success?: boolean;
+  /** คีย์หลักของ Request (จาก Supabase อาจเป็น string) */
+  bookingId?: string;
   error?: string;
   fieldErrors?: Record<string, string>;
 };
@@ -162,7 +162,5 @@ export async function createBooking(
     note: "สร้างคำขอใหม่",
   });
 
-  revalidateTag("requests", { expire: 0 });
-  revalidatePath("/");
-  redirect(`/dashboard?success=${inserted.id}`);
+  return { success: true, bookingId: inserted.id };
 }

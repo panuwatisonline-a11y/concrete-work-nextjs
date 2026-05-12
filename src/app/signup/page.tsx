@@ -5,6 +5,8 @@ import { isSupabaseConfigured, isServiceRoleConfigured } from "@/lib/supabase/re
 import SignupForm from "@/components/auth/SignupForm";
 import { AppLogo, Card } from "@/components/ui";
 
+export const dynamic = "force-dynamic";
+
 export default async function SignupPage() {
   if (!isSupabaseConfigured()) {
     return (

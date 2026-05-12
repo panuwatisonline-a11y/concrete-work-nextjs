@@ -128,7 +128,9 @@ export default function BookingForm({
   const [requestedAt] = useState(() => new Date());
 
   const hasFieldErrors = Boolean(state.fieldErrors && Object.keys(state.fieldErrors).length > 0);
-  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(Boolean(state.error) || hasFieldErrors);
+  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(
+    Boolean(state.error) || hasFieldErrors || Boolean(state.success),
+  );
   const showSavingUi = optimisticSaving || pending;
 
   const [concreteWorkId, setConcreteWorkId] = useState("");
@@ -249,6 +251,12 @@ export default function BookingForm({
     const ids = [...clients].map((c) => c.id).sort((a, b) => a - b);
     return `client-${defaultClientId ?? "none"}-${ids.join(",")}`;
   }, [clients, defaultClientId]);
+
+  useEffect(() => {
+    if (!state.success || !state.bookingId) return;
+    router.refresh();
+    router.push(`/dashboard?success=${encodeURIComponent(state.bookingId)}`);
+  }, [state.success, state.bookingId, router]);
 
   return (
     <form

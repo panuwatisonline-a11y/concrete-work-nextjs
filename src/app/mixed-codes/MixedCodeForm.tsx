@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { createMixedCode, updateMixedCode, type MixedCodeState } from "./actions";
 import type { MixedCode, Structure } from "@/lib/supabase/queries";
 import { MultiSelect } from "@/components/MultiSelect";
@@ -33,8 +33,16 @@ export default function MixedCodeForm({ mode, initial, structures }: Props) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const err = state.fieldErrors ?? {};
   const hasFieldErrors = Boolean(state.fieldErrors && Object.keys(state.fieldErrors).length > 0);
-  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(Boolean(state.error) || hasFieldErrors);
+  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(
+    Boolean(state.error) || hasFieldErrors || Boolean(state.success),
+  );
   const showSavingUi = optimisticSaving || pending;
+
+  useEffect(() => {
+    if (!state.success) return;
+    router.refresh();
+    router.push("/mixed-codes");
+  }, [state.success, router]);
 
   return (
     <form

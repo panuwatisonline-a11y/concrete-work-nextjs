@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import RequestRealtimeRefresh from "@/components/RequestRealtimeRefresh";
 import SupabaseEnvBanner from "@/components/SupabaseEnvBanner";
 import "./globals.css";
 
@@ -27,6 +28,8 @@ export default function RootLayout({
     <html lang="th" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-gray-50 text-gray-900 select-none">
         <SupabaseEnvBanner />
+        {/* Realtime คำขอ (Request) + router.refresh — ทุก route รวมเพจใหม่ในอนาคต; สมัครเฉพาะเมื่อล็อกอิน */}
+        <RequestRealtimeRefresh />
         {children}
       </body>
     </html>

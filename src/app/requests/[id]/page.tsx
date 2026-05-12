@@ -11,6 +11,8 @@ import { formatIsoBangkokDateAndTime } from "@/lib/date-display";
 import { StatusBadge, formatDate } from "@/components/RequestList";
 import { Card } from "@/components/ui";
 
+export const dynamic = "force-dynamic";
+
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === "") return null;
   return (

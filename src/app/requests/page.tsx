@@ -5,6 +5,8 @@ import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/Request
 import { AppLogo } from "@/components/ui";
 import { isSupabaseConfigured } from "@/lib/supabase/readonly";
 
+export const dynamic = "force-dynamic";
+
 export default async function RequestsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   if (!isSupabaseConfigured()) {
     return (

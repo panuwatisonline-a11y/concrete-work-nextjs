@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export type ProfileUpdateState = {
@@ -65,6 +64,5 @@ export async function updateProfile(_prev: ProfileUpdateState, formData: FormDat
     return { error: error.message };
   }
 
-  revalidatePath("/profile");
   return { success: true };
 }
