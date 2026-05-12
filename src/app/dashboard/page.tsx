@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { getRequests, getStatusSummary } from "@/lib/supabase/queries";
 import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
+import { createClient } from "@/lib/supabase/server";
 import { BookingSuccessBanner } from "@/components/BookingSuccessBanner";
 import TabNav from "@/components/TabNav";
 import BottomNav from "@/components/BottomNav";
@@ -36,6 +37,16 @@ function StatusItem({
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ success?: string }> }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let viewer: { userId: string; role: string | null } | null = null;
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    viewer = { userId: user.id, role: profile?.role ?? null };
+  }
+
   const [{ data: requests, count }, statusSummary, params] = await Promise.all([
     getRequests(20, 0),
     getStatusSummary(),
@@ -77,7 +88,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">รายการล่าสุด</h2>
             <span className="text-xs text-zinc-400">{requests.length} / {count.toLocaleString()}</span>
           </div>
-          <RequestList requests={requests} variant="compact" minimal />
+          <RequestList requests={requests} variant="compact" minimal viewer={viewer} />
         </section>
       </div>
 

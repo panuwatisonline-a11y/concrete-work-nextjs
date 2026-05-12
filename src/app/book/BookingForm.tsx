@@ -3,16 +3,39 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
-import { createBooking, type BookingState } from "./actions";
+import { createBooking, updateBooking, type BookingState } from "./actions";
 import { Select } from "@/components/Select";
 import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls, OptimisticSavingBanner } from "@/components/ui";
 import { useOptimisticSaving } from "@/hooks/useOptimisticSaving";
-import { formatIsoDateTimeBangkok } from "@/lib/date-display";
+import { formatIsoDateTimeBangkok, formatWireDateAsDMY } from "@/lib/date-display";
 import type { Location, ConcreteWork, MixedCode, WBSCode, ABCCode, Client } from "@/lib/supabase/queries";
 
 type RequesterPreview = {
   fullName: string;
   phone: string | null;
+};
+
+/** ค่าตั้งต้นสำหรับโหมดแก้ไขคำขอ (สถานะรอตรวจสอบ) */
+export type BookingEditDefaults = {
+  id: string;
+  request_date: string | null;
+  request_time: string | null;
+  concrete_work_id: string;
+  structure_pick: string;
+  strength: string;
+  supplier: string;
+  mixcode_id: string;
+  casting_date: string;
+  casting_time: string;
+  client_id: string;
+  location_id: string;
+  structure_no: string;
+  wbs_code_id: string;
+  abc_code_id: string;
+  volume_dwg: string;
+  volume_request: string;
+  sample_qty: string;
+  remarksUser: string;
 };
 
 type Props = {
@@ -29,6 +52,8 @@ type Props = {
   defaultCastingDate: string;
   /** ข้อมูลผู้ขอจาก profiles (ล็อกอินแล้วเท่านั้น) — null ถ้ายังไม่เข้าสู่ระบบ */
   requester: RequesterPreview | null;
+  /** ถ้ากำหนด — บันทึกเป็นการอัปเดตคำขอเดิม (ไม่สร้างใหม่) */
+  editRequest?: BookingEditDefaults | null;
 };
 
 const initialState: BookingState = {};
@@ -121,9 +146,11 @@ export default function BookingForm({
   volumeUsedByMixcode,
   defaultCastingDate,
   requester,
+  editRequest = null,
 }: Props) {
   const router = useRouter();
-  const [state, action, pending] = useActionState(createBooking, initialState);
+  const bookingAction = editRequest ? updateBooking : createBooking;
+  const [state, action, pending] = useActionState(bookingAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const [requestedAt] = useState(() => new Date());
 
@@ -133,11 +160,11 @@ export default function BookingForm({
   );
   const showSavingUi = optimisticSaving || pending;
 
-  const [concreteWorkId, setConcreteWorkId] = useState("");
-  const [structurePick, setStructurePick] = useState("");
-  const [strengthPick, setStrengthPick] = useState("");
-  const [supplierPick, setSupplierPick] = useState("");
-  const [mixcodeId, setMixcodeId] = useState("");
+  const [concreteWorkId, setConcreteWorkId] = useState(() => editRequest?.concrete_work_id ?? "");
+  const [structurePick, setStructurePick] = useState(() => editRequest?.structure_pick ?? "");
+  const [strengthPick, setStrengthPick] = useState(() => editRequest?.strength ?? "");
+  const [supplierPick, setSupplierPick] = useState(() => editRequest?.supplier ?? "");
+  const [mixcodeId, setMixcodeId] = useState(() => editRequest?.mixcode_id ?? "");
 
   const eligibleConcreteWorks = useMemo(
     () => filterConcreteWorksByMixed(concreteWorks, mixedCodes),
@@ -206,7 +233,7 @@ export default function BookingForm({
     Boolean(supplierPick && mixOptions.length > 0 && !mixcodeId);
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && !editRequest) {
       formRef.current?.reset();
       setConcreteWorkId("");
       setStructurePick("");
@@ -214,7 +241,7 @@ export default function BookingForm({
       setSupplierPick("");
       setMixcodeId("");
     }
-  }, [state.success]);
+  }, [state.success, editRequest]);
 
   useEffect(() => {
     setStructurePick("");
@@ -249,27 +276,37 @@ export default function BookingForm({
 
   const clientSelectKey = useMemo(() => {
     const ids = [...clients].map((c) => c.id).sort((a, b) => a - b);
-    return `client-${defaultClientId ?? "none"}-${ids.join(",")}`;
-  }, [clients, defaultClientId]);
+    const cid = editRequest?.client_id || (defaultClientId != null ? String(defaultClientId) : "none");
+    return `client-${editRequest?.id ?? "new"}-${cid}-${ids.join(",")}`;
+  }, [clients, defaultClientId, editRequest]);
 
   useEffect(() => {
     if (!state.success || !state.bookingId) return;
     router.refresh();
-    router.push(`/dashboard?success=${encodeURIComponent(state.bookingId)}`);
-  }, [state.success, state.bookingId, router]);
+    if (editRequest) {
+      router.push(`/requests/${editRequest.id}`);
+    } else {
+      router.push(`/dashboard?success=${encodeURIComponent(state.bookingId)}`);
+    }
+  }, [state.success, state.bookingId, router, editRequest]);
 
   return (
     <form
       ref={formRef}
       action={(formData) => {
         setOptimisticSaving(true);
-        router.prefetch("/dashboard");
+        if (editRequest) router.prefetch(`/requests/${editRequest.id}`);
+        else router.prefetch("/dashboard");
         action(formData);
       }}
       className="space-y-3 stagger-rise"
       aria-busy={showSavingUi}
     >
-      <OptimisticSavingBanner show={showSavingUi} message="กำลังบันทึกคำขอของคุณ…" />
+      {editRequest ? <input type="hidden" name="request_id" value={editRequest.id} /> : null}
+      <OptimisticSavingBanner
+        show={showSavingUi}
+        message={editRequest ? "กำลังบันทึกการแก้ไข…" : "กำลังบันทึกคำขอของคุณ…"}
+      />
       {state.error && (
         <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs">{state.error}</div>
       )}
@@ -277,8 +314,23 @@ export default function BookingForm({
       <Section title="ข้อมูลการขอ">
         <div>
           <Label>วันที่ขอ</Label>
-          <input type="text" readOnly className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`} value={requestDisplay} />
-          <p className="mt-1 text-[10px] text-zinc-400">บันทึกเป็นวันเวลาจริงตอนส่งฟอร์ม (แก้ไขไม่ได้)</p>
+          <input
+            type="text"
+            readOnly
+            className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`}
+            value={
+              editRequest
+                ? `${formatWireDateAsDMY(editRequest.request_date)}${
+                    editRequest.request_time ? ` · ${editRequest.request_time.slice(0, 5)}` : ""
+                  }`
+                : requestDisplay
+            }
+          />
+          <p className="mt-1 text-[10px] text-zinc-400">
+            {editRequest
+              ? "วันที่ขอตามที่บันทึกตอนสร้างคำขอ (แก้ไขไม่ได้)"
+              : "บันทึกเป็นวันเวลาจริงตอนส่งฟอร์ม (แก้ไขไม่ได้)"}
+          </p>
         </div>
         <div className="pt-1 border-t border-zinc-100">
           <Label>ผู้ขอ</Label>
@@ -319,11 +371,22 @@ export default function BookingForm({
         <Row>
           <div>
             <Label required>วันที่เทคอนกรีต</Label>
-            <input type="date" name="casting_date" className={inputCls} defaultValue={defaultCastingDate} required />
+            <input
+              type="date"
+              name="casting_date"
+              className={inputCls}
+              defaultValue={editRequest?.casting_date || defaultCastingDate}
+              required
+            />
           </div>
           <div>
             <Label>เวลาเทคอนกรีต</Label>
-            <input type="time" name="casting_time" className={inputCls} defaultValue="09:00" />
+            <input
+              type="time"
+              name="casting_time"
+              className={inputCls}
+              defaultValue={editRequest?.casting_time ?? "09:00"}
+            />
           </div>
         </Row>
       </Section>
@@ -334,6 +397,7 @@ export default function BookingForm({
           <Select
             name="abc_code_id"
             placeholder="— เลือก ABC Code —"
+            defaultValue={editRequest?.abc_code_id ?? ""}
             options={abcCodes.map((a) => ({
               value: String(a.id),
               label: `${a.full_abc ?? ""}${a.description ? ` — ${a.description}` : ""}`,
@@ -345,6 +409,7 @@ export default function BookingForm({
           <Select
             name="wbs_code_id"
             placeholder="— เลือก WBS Code —"
+            defaultValue={editRequest?.wbs_code_id ?? ""}
             options={wbsCodes.map((w) => ({
               value: String(w.id),
               label: `${w.full_wbs ?? ""}${w.description ? ` — ${w.description}` : ""}`,
@@ -361,7 +426,7 @@ export default function BookingForm({
             name="client_id"
             placeholder="— เลือกผู้รับเหมา —"
             required
-            defaultValue={defaultClientId != null ? String(defaultClientId) : ""}
+            defaultValue={editRequest?.client_id || (defaultClientId != null ? String(defaultClientId) : "")}
             options={clientSelectOptions}
           />
           <FieldError msg={err.client_id} />
@@ -373,6 +438,7 @@ export default function BookingForm({
             name="concrete_work_id"
             placeholder="— เลือกประเภทงาน —"
             required
+            defaultValue={editRequest?.concrete_work_id ?? ""}
             options={eligibleConcreteWorks.map((cw) => ({
               value: String(cw.id),
               label: cw.concrete_work ?? `#${cw.id}`,
@@ -393,6 +459,7 @@ export default function BookingForm({
               name="structure_pick"
               placeholder="— เลือกโครงสร้าง —"
               required
+              defaultValue={editRequest && concreteWorkId === editRequest.concrete_work_id ? editRequest.structure_pick : ""}
               options={structureOptions}
               onValueChange={setStructurePick}
             />
@@ -405,6 +472,7 @@ export default function BookingForm({
             name="location_id"
             placeholder="— เลือกสถานที่ —"
             required
+            defaultValue={editRequest?.location_id ?? ""}
             options={locations.map((l) => ({
               value: String(l.id),
               label: l.full_location ?? l.description ?? `#${l.id}`,
@@ -414,7 +482,13 @@ export default function BookingForm({
         </div>
         <div>
           <Label>หมายเลขโครงสร้าง</Label>
-          <input type="text" name="structure_no" className={inputCls} placeholder="เช่น COL-A1-01" />
+          <input
+            type="text"
+            name="structure_no"
+            className={inputCls}
+            placeholder="เช่น COL-A1-01"
+            defaultValue={editRequest?.structure_no ?? ""}
+          />
         </div>
       </Section>
 
@@ -428,6 +502,13 @@ export default function BookingForm({
               name="booking_strength_ui"
               placeholder="— เลือกกำลังอัด —"
               required
+              defaultValue={
+                editRequest &&
+                concreteWorkId === editRequest.concrete_work_id &&
+                structurePick === editRequest.structure_pick
+                  ? editRequest.strength
+                  : ""
+              }
               options={strengthOptions.map((v) => ({ value: String(v), label: `${v} ksc` }))}
               onValueChange={setStrengthPick}
             />
@@ -443,6 +524,14 @@ export default function BookingForm({
               name="booking_supplier_ui"
               placeholder="— เลือก Supplier —"
               required
+              defaultValue={
+                editRequest &&
+                concreteWorkId === editRequest.concrete_work_id &&
+                structurePick === editRequest.structure_pick &&
+                strengthPick === editRequest.strength
+                  ? editRequest.supplier
+                  : ""
+              }
               options={supplierOptions.map((s) => ({ value: s, label: s }))}
               onValueChange={setSupplierPick}
             />
@@ -458,6 +547,15 @@ export default function BookingForm({
               name="mixcode_id"
               placeholder="— เลือก Mix Code —"
               required
+              defaultValue={
+                editRequest &&
+                concreteWorkId === editRequest.concrete_work_id &&
+                structurePick === editRequest.structure_pick &&
+                strengthPick === editRequest.strength &&
+                supplierPick === editRequest.supplier
+                  ? editRequest.mixcode_id
+                  : ""
+              }
               options={mixOptions}
               onValueChange={setMixcodeId}
             />
@@ -507,6 +605,7 @@ export default function BookingForm({
               step="0.01"
               className={inputCls}
               placeholder="0.00"
+              defaultValue={editRequest?.volume_dwg || undefined}
               onWheel={blurNumberInputOnWheel}
             />
             <FieldError msg={err.volume_dwg} />
@@ -521,6 +620,7 @@ export default function BookingForm({
               className={inputCls}
               placeholder="0.00"
               required
+              defaultValue={editRequest?.volume_request || undefined}
               onWheel={blurNumberInputOnWheel}
             />
             <p className="mt-1 text-[10px] text-zinc-400">อย่าเลื่อนล้อเมาส์บนช่องนี้ขณะโฟกัส — เบราว์เซอร์อาจลด/เพิ่มทีละ 0.01 โดยไม่ตั้งใจ</p>
@@ -529,7 +629,15 @@ export default function BookingForm({
         </Row>
         <div>
           <Label>จำนวนตัวอย่าง (ก้อน)</Label>
-          <input type="number" name="sample_qty" min="0" step="1" className={inputCls} defaultValue={9} onWheel={blurNumberInputOnWheel} />
+          <input
+            type="number"
+            name="sample_qty"
+            min="0"
+            step="1"
+            className={inputCls}
+            defaultValue={editRequest?.sample_qty ?? 9}
+            onWheel={blurNumberInputOnWheel}
+          />
           <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
             บันทึกเฉพาะจำนวนก้อน — ข้อความในวงเล็บเช่น Cylinder เป็นค่าจาก Mix Code ที่หน้ารายละเอียดจะแสดงตามนั้น
           </p>
@@ -540,14 +648,20 @@ export default function BookingForm({
       <Section title="หมายเหตุ">
         <div>
           <Label>หมายเหตุเพิ่มเติม</Label>
-          <textarea name="remarks" rows={3} className={`${inputCls} resize-none`} placeholder="ระบุรายละเอียดเพิ่มเติม..." />
+          <textarea
+            name="remarks"
+            rows={3}
+            className={`${inputCls} resize-none`}
+            placeholder="ระบุรายละเอียดเพิ่มเติม..."
+            defaultValue={editRequest?.remarksUser ?? ""}
+          />
         </div>
       </Section>
 
       <div className="flex gap-2 justify-end pt-1 pb-4">
-        <BtnGhost href="/dashboard">ยกเลิก</BtnGhost>
-        <BtnPrimary type="submit" disabled={showSavingUi || cascadeBlocked || requester == null}>
-          {showSavingUi ? "กำลังบันทึก…" : "ยืนยันการจอง"}
+        <BtnGhost href={editRequest ? `/requests/${editRequest.id}` : "/dashboard"}>ยกเลิก</BtnGhost>
+        <BtnPrimary type="submit" disabled={showSavingUi || cascadeBlocked || (requester == null && !editRequest)}>
+          {showSavingUi ? "กำลังบันทึก…" : editRequest ? "บันทึกการแก้ไข" : "ยืนยันการจอง"}
         </BtnPrimary>
       </div>
     </form>

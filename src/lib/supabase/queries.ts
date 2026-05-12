@@ -6,6 +6,7 @@ export type RequestView = Tables<"Request_View">;
 export type RequestViewListItem = Pick<
   RequestView,
   | "id"
+  | "booked_by"
   | "request_date"
   | "request_time"
   | "booked_by_name"
@@ -25,6 +26,7 @@ export type Status = Tables<"Status">;
 
 const REQUEST_VIEW_LIST_SELECT = [
   "id",
+  "booked_by",
   "request_date",
   "request_time",
   "booked_by_name",

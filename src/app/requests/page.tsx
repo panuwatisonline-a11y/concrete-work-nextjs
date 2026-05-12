@@ -4,6 +4,7 @@ import { getRequestsByStatus, getStatusById } from "@/lib/supabase/queries";
 import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
 import { AppLogo } from "@/components/ui";
 import { isSupabaseConfigured } from "@/lib/supabase/readonly";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,16 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const statusId = params.status ? Number(params.status) : null;
   if (!statusId || isNaN(statusId)) notFound();
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let viewer: { userId: string; role: string | null } | null = null;
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    viewer = { userId: user.id, role: profile?.role ?? null };
+  }
 
   const [currentStatus, { data: requests, count }] = await Promise.all([
     getStatusById(statusId),
@@ -58,7 +69,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest">Requests</p>
           <span className="text-xs text-zinc-400">{count.toLocaleString()} รายการ</span>
         </div>
-        <RequestList requests={requests} variant="detailed" />
+        <RequestList requests={requests} variant="detailed" viewer={viewer} />
       </div>
     </main>
   );

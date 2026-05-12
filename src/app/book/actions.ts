@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { canEditOrCancelPendingRequest } from "@/lib/auth/request-permissions";
 
 export type BookingState = {
   success?: boolean;
@@ -163,4 +164,141 @@ export async function createBooking(
   });
 
   return { success: true, bookingId: inserted.id };
+}
+
+export async function updateBooking(_prevState: BookingState, formData: FormData): Promise<BookingState> {
+  const requestId = (formData.get("request_id") as string | null)?.trim();
+  if (!requestId) {
+    return { error: "ไม่พบรหัสคำขอสำหรับแก้ไข" };
+  }
+
+  const raw = {
+    casting_date: formData.get("casting_date") as string | null,
+    casting_time: formData.get("casting_time") as string | null,
+    client_id: formData.get("client_id") as string | null,
+    location_id: formData.get("location_id") as string | null,
+    structure_pick: formData.get("structure_pick") as string | null,
+    structure_no: formData.get("structure_no") as string | null,
+    concrete_work_id: formData.get("concrete_work_id") as string | null,
+    wbs_code_id: formData.get("wbs_code_id") as string | null,
+    abc_code_id: formData.get("abc_code_id") as string | null,
+    mixcode_id: formData.get("mixcode_id") as string | null,
+    strength: formData.get("strength") as string | null,
+    volume_dwg: formData.get("volume_dwg") as string | null,
+    volume_request: formData.get("volume_request") as string | null,
+    sample_qty: formData.get("sample_qty") as string | null,
+    remarks: formData.get("remarks") as string | null,
+  };
+
+  const fieldErrors: Record<string, string> = {};
+  if (!raw.client_id) fieldErrors.client_id = "กรุณาเลือกผู้รับเหมา";
+  if (!raw.location_id) fieldErrors.location_id = "กรุณาเลือกสถานที่";
+  if (!raw.structure_pick?.trim()) fieldErrors.structure_pick = "กรุณาเลือกโครงสร้าง";
+  if (!raw.concrete_work_id) fieldErrors.concrete_work_id = "กรุณาเลือกประเภทงาน";
+  if (!raw.mixcode_id) fieldErrors.mixcode_id = "กรุณาเลือก Mix Code";
+
+  const volume_request = parseDecimalInput(raw.volume_request);
+  if (volume_request == null || volume_request <= 0) {
+    fieldErrors.volume_request = "กรุณาระบุปริมาณที่ขอเป็นตัวเลขมากกว่า 0";
+  }
+
+  const volume_dwg = parseDecimalInput(raw.volume_dwg);
+  if (volume_dwg != null && volume_dwg < 0) fieldErrors.volume_dwg = "ปริมาณตามแบบต้องไม่ติดลบ";
+
+  const sample_qty = parseIntInput(raw.sample_qty);
+  if (sample_qty != null && sample_qty < 0) fieldErrors.sample_qty = "จำนวนตัวอย่างต้องไม่ติดลบ";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "กรุณาเข้าสู่ระบบก่อนแก้ไขคำขอ" };
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const viewerRole = profile?.role ?? null;
+
+  const { data: existing, error: exErr } = await supabase
+    .from("Request")
+    .select("id, status_id, booked_by")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (exErr) return { error: exErr.message };
+  if (!existing || existing.status_id !== DEFAULT_NEW_REQUEST_STATUS_ID) {
+    return { error: "แก้ไขไม่ได้ — อนุญาตเฉพาะคำขอที่ยังอยู่ในสถานะรอตรวจสอบ" };
+  }
+
+  if (
+    !canEditOrCancelPendingRequest({
+      viewerUserId: user.id,
+      viewerRole,
+      bookedByUserId: existing.booked_by,
+    })
+  ) {
+    return { error: "ไม่มีสิทธิ์แก้ไขคำขอนี้" };
+  }
+
+  const pick = raw.structure_pick!.trim();
+  const { data: structRows } = await supabase.from("Structure").select("id, structure_name");
+  let structure_id: number | null = null;
+  for (const s of structRows ?? []) {
+    if (normName(s.structure_name ?? "") === normName(pick)) {
+      structure_id = s.id;
+      break;
+    }
+  }
+
+  const remarkLines: string[] = [];
+  if (raw.casting_time?.trim()) remarkLines.push(`เวลาเทคอนกรีต: ${raw.casting_time.trim()}`);
+  if (!structure_id) remarkLines.push(`__STRUCTURE__::${pick}`);
+  if (raw.remarks?.trim()) remarkLines.push(raw.remarks.trim());
+  const remarksMerged = remarkLines.length > 0 ? remarkLines.join("\n") : null;
+
+  const payload = {
+    casting_date: raw.casting_date || null,
+    client_id: raw.client_id ? Number(raw.client_id) : null,
+    location_id: raw.location_id ? Number(raw.location_id) : null,
+    structure_id,
+    structure_no: raw.structure_no || null,
+    concrete_work_id: raw.concrete_work_id ? Number(raw.concrete_work_id) : null,
+    wbs_code_id: raw.wbs_code_id ? Number(raw.wbs_code_id) : null,
+    abc_code_id: raw.abc_code_id ? Number(raw.abc_code_id) : null,
+    mixcode_id: raw.mixcode_id ? Number(raw.mixcode_id) : null,
+    strength: parseIntInput(raw.strength),
+    volume_dwg: volume_dwg ?? null,
+    volume_request: volume_request!,
+    sample_qty: sample_qty ?? null,
+    remarks: remarksMerged,
+  };
+
+  const { data: updated, error } = await supabase
+    .from("Request")
+    .update(payload)
+    .eq("id", requestId)
+    .eq("status_id", DEFAULT_NEW_REQUEST_STATUS_ID)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    return { error: `บันทึกไม่สำเร็จ: ${error.message}` };
+  }
+  if (!updated) {
+    return { error: "อัปเดตไม่สำเร็จ — สถานะคำขอเปลี่ยนแล้ว" };
+  }
+
+  await supabase.from("Request_Log").insert({
+    request_id: requestId,
+    action: "updated",
+    action_by: user.id,
+    status_id: DEFAULT_NEW_REQUEST_STATUS_ID,
+    note: "แก้ไขรายละเอียดคำขอ",
+  });
+
+  return { success: true, bookingId: requestId };
 }

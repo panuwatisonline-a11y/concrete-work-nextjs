@@ -3,6 +3,9 @@ import type { RequestViewListItem } from "@/lib/supabase/queries";
 import { formatWireDateAsDMY } from "@/lib/date-display";
 import { formatRemarksForDisplay, formatVolumeM3, parseStructurePickFromRemarks } from "@/lib/request-format";
 import { Card } from "@/components/ui";
+import { RequestStatusOneActions } from "@/components/RequestStatusOneActions";
+
+export type RequestListViewer = { userId: string; role: string | null };
 
 /* ── Status colour system (cohesive palette) ─────────────────────── */
 export const STATUS_STYLES: Record<number, { badge: string; dot: string; bar: string }> = {
@@ -72,13 +75,15 @@ function bookerClientHeadline(req: RequestViewListItem): string {
 }
 
 /* ── Dashboard “รายการล่าสุด” — readable multi-line row (mobile-first) ─ */
-function RequestRowMinimal({ req }: { req: RequestViewListItem }) {
+function RequestRowMinimal({ req, viewer }: { req: RequestViewListItem; viewer?: RequestListViewer | null }) {
   const s = statusStyle(req.status_id);
   const booker = req.booked_by_name?.trim() || req.client_name?.trim() || null;
+  const showActions = Boolean(viewer && req.id);
   return (
+    <div className="border-b border-zinc-100 last:border-b-0">
     <Link
       href={`/requests/${req.id}`}
-      className="flex gap-3 px-4 py-3.5 hover:bg-zinc-50/90 active:bg-zinc-50 border-b border-zinc-100 last:border-b-0 motion-safe:transition-[background-color,transform] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-0.5 active:scale-[0.995] group"
+      className="flex gap-3 px-4 py-3.5 hover:bg-zinc-50/90 active:bg-zinc-50 motion-safe:transition-[background-color,transform] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-0.5 active:scale-[0.995] group"
     >
       <span className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white ${s.dot}`} aria-hidden />
       <div className="flex-1 min-w-0 space-y-1.5">
@@ -114,15 +119,31 @@ function RequestRowMinimal({ req }: { req: RequestViewListItem }) {
         </svg>
       </div>
     </Link>
+    {showActions && viewer && req.id && (
+      <div className="px-4 pb-3 pl-[2.35rem]">
+        <RequestStatusOneActions
+          requestId={req.id}
+          statusId={req.status_id ?? 0}
+          bookedByUserId={req.booked_by ?? null}
+          viewerUserId={viewer.userId}
+          viewerRole={viewer.role}
+        />
+      </div>
+    )}
+    </div>
   );
 }
 
 /* ── Standard compact card (status page) ─────────────────────────── */
-function RequestCard({ req }: { req: RequestViewListItem }) {
+function RequestCard({ req, viewer }: { req: RequestViewListItem; viewer?: RequestListViewer | null }) {
+  const showActions = Boolean(viewer && req.id);
   return (
+    <div
+      className="bg-white border border-zinc-200 rounded-xl hover:border-zinc-300/90 hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.04] active:scale-[0.992] overflow-hidden"
+    >
     <Link
       href={`/requests/${req.id}`}
-      className="bg-white border border-zinc-200 rounded-xl px-4 py-3.5 flex items-center gap-3 hover:border-zinc-300/90 hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.04] active:scale-[0.992]"
+      className="px-4 py-3.5 flex items-center gap-3"
     >
       <div className="shrink-0 text-center w-12">
         <p className="text-[11px] font-semibold text-zinc-700 tabular-nums leading-tight">{formatDate(req.request_date)}</p>
@@ -148,16 +169,30 @@ function RequestCard({ req }: { req: RequestViewListItem }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     </Link>
+    {showActions && viewer && req.id && (
+      <div className="px-4 pb-3 border-t border-zinc-100 bg-zinc-50/40">
+        <RequestStatusOneActions
+          requestId={req.id}
+          statusId={req.status_id ?? 0}
+          bookedByUserId={req.booked_by ?? null}
+          viewerUserId={viewer.userId}
+          viewerRole={viewer.role}
+        />
+      </div>
+    )}
+    </div>
   );
 }
 
 /* ── Detailed card (status page) ─────────────────────────────────── */
-function RequestCardDetailed({ req }: { req: RequestViewListItem }) {
+function RequestCardDetailed({ req, viewer }: { req: RequestViewListItem; viewer?: RequestListViewer | null }) {
   const note = formatRemarksForDisplay(req.remarks);
+  const showActions = Boolean(viewer && req.id);
   return (
+    <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3 hover:border-zinc-300/90 hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.05] active:scale-[0.992]">
     <Link
       href={`/requests/${req.id}`}
-      className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3 hover:border-zinc-300/90 hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.05] block active:scale-[0.992]"
+      className="block space-y-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/35 rounded-lg -m-1 p-1"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -190,11 +225,23 @@ function RequestCardDetailed({ req }: { req: RequestViewListItem }) {
         <p className="text-[11px] text-zinc-400 border-t border-zinc-100 pt-2 truncate">{note}</p>
       )}
     </Link>
+    {showActions && viewer && req.id && (
+      <div className="pt-2 border-t border-zinc-100">
+        <RequestStatusOneActions
+          requestId={req.id}
+          statusId={req.status_id ?? 0}
+          bookedByUserId={req.booked_by ?? null}
+          viewerUserId={viewer.userId}
+          viewerRole={viewer.role}
+        />
+      </div>
+    )}
+    </div>
   );
 }
 
 /* ── Desktop table row ───────────────────────────────────────────── */
-function RequestRow({ req }: { req: RequestViewListItem }) {
+function RequestRow({ req, viewer }: { req: RequestViewListItem; viewer?: RequestListViewer | null }) {
   const cells: React.ReactNode[] = [
     <>{formatDate(req.request_date)}{req.request_time && <span className="ml-1.5 text-zinc-400 tabular-nums">{req.request_time.slice(0, 5)}</span>}</>,
     req.client_name ?? "—",
@@ -218,6 +265,22 @@ function RequestRow({ req }: { req: RequestViewListItem }) {
           <StatusBadge statusId={req.status_id} statusName={req.status_name} />
         </Link>
       </td>
+      {viewer ? (
+        <td className="px-4 py-3 align-top min-w-[12rem]">
+          {req.id ? (
+            <RequestStatusOneActions
+              layout="row"
+              requestId={req.id}
+              statusId={req.status_id ?? 0}
+              bookedByUserId={req.booked_by ?? null}
+              viewerUserId={viewer.userId}
+              viewerRole={viewer.role}
+            />
+          ) : (
+            <span className="text-xs text-zinc-300">—</span>
+          )}
+        </td>
+      ) : null}
     </tr>
   );
 }
@@ -227,10 +290,13 @@ export function RequestList({
   requests,
   variant = "compact",
   minimal = false,
+  viewer = null,
 }: {
   requests: RequestViewListItem[];
   variant?: "compact" | "detailed";
   minimal?: boolean;
+  /** ถ้ามี — แสดงปุ่มดำเนินการตามสถานะคำขอ (ทุกสถานะ) */
+  viewer?: RequestListViewer | null;
 }) {
   if (requests.length === 0) {
     return (
@@ -243,7 +309,7 @@ export function RequestList({
   if (minimal) {
     return (
       <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm stagger-rise">
-        {requests.map((req) => <RequestRowMinimal key={req.id} req={req} />)}
+        {requests.map((req) => <RequestRowMinimal key={req.id} req={req} viewer={viewer} />)}
       </div>
     );
   }
@@ -254,8 +320,8 @@ export function RequestList({
       <div className="md:hidden space-y-2 stagger-rise">
         {requests.map((req) =>
           variant === "detailed"
-            ? <RequestCardDetailed key={req.id} req={req} />
-            : <RequestCard key={req.id} req={req} />
+            ? <RequestCardDetailed key={req.id} req={req} viewer={viewer} />
+            : <RequestCard key={req.id} req={req} viewer={viewer} />
         )}
       </div>
       {/* Desktop */}
@@ -264,14 +330,14 @@ export function RequestList({
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-zinc-200 bg-zinc-50">
-                {["วันที่ขอ","ผู้รับเหมา","สถานที่","โครงสร้าง","ประเภทงาน","Mix Code","ปริมาณ (m³)","สถานะ"].map((h, i) => (
+                {["วันที่ขอ","ผู้รับเหมา","สถานที่","โครงสร้าง","ประเภทงาน","Mix Code","ปริมาณ (m³)","สถานะ", ...(viewer ? ["การทำงาน"] : [])].map((h, i) => (
                   <th key={h} className={`px-4 py-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest whitespace-nowrap ${i === 6 ? "text-right" : ""}`}>
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="stagger-rise">{requests.map((req) => <RequestRow key={req.id} req={req} />)}</tbody>
+            <tbody className="stagger-rise">{requests.map((req) => <RequestRow key={req.id} req={req} viewer={viewer} />)}</tbody>
           </table>
         </div>
       </div>
