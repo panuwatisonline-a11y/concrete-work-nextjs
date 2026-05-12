@@ -30,7 +30,7 @@ export default function LoginForm() {
     }
 
     router.refresh();
-    router.push("/profile");
+    router.push("/dashboard");
   }
 
   return (

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const nextPath = searchParams.get("next")?.startsWith("/") ? searchParams.get("next")! : "/profile";
+  const nextPath = searchParams.get("next")?.startsWith("/") ? searchParams.get("next")! : "/dashboard";
 
   const fail = () => NextResponse.redirect(new URL("/auth/error", request.url));
 
