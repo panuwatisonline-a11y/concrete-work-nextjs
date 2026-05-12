@@ -54,7 +54,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
 
       <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest">รายการคำขอ</p>
+          <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest">Requests</p>
           <span className="text-xs text-zinc-400">{count.toLocaleString()} รายการ</span>
         </div>
         <RequestList requests={requests} variant="detailed" />

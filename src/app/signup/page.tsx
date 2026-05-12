@@ -6,14 +6,6 @@ import SignupForm from "@/components/auth/SignupForm";
 import { AppLogo, Card } from "@/components/ui";
 
 export default async function SignupPage() {
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) redirect("/profile");
-  }
-
   if (!isSupabaseConfigured()) {
     return (
       <main className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center px-4 py-12">
@@ -30,9 +22,24 @@ export default async function SignupPage() {
     );
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/profile");
+
+  const { data: jobsData } = await supabase.from("Jobs").select("id, job_name").order("job_name");
+  const jobs = jobsData ?? [];
+
+  const { data: clientsData } = await supabase.from("Client").select("id, client_name").order("client_name");
+  const clients = (clientsData ?? []).map((c) => ({
+    id: c.id,
+    client_name: (c.client_name ?? "").trim() || `ลูกค้า #${c.id}`,
+  }));
+
   return (
     <main className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-lg space-y-6">
         <div className="text-center space-y-1">
           <div className="flex justify-center">
             <AppLogo />
@@ -40,7 +47,7 @@ export default async function SignupPage() {
           <h1 className="text-lg font-semibold text-zinc-900">สมัครสมาชิก</h1>
         </div>
         <Card className="p-6 shadow-sm shadow-zinc-900/5">
-          <SignupForm />
+          <SignupForm jobs={jobs} clients={clients} />
         </Card>
         <p className="text-sm text-center text-zinc-500">
           <Link href="/" className="text-orange-600 font-medium hover:underline">

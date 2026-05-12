@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { RequestView } from "@/lib/supabase/queries";
+import { formatWireDateAsDMY } from "@/lib/date-display";
 import { formatRemarksForDisplay, formatVolumeM3, parseStructurePickFromRemarks } from "@/lib/request-format";
 import { Card } from "@/components/ui";
 
@@ -36,19 +37,44 @@ export function StatusBadge({ statusId, statusName }: { statusId: number | null;
   );
 }
 
+/** Tight pill for dense lists (e.g. dashboard recent). Renders when name or id is present. */
+export function StatusBadgeCompact({ statusId, statusName }: { statusId: number | null; statusName: string | null }) {
+  const label = statusName?.trim();
+  if (statusId == null && !label) return null;
+  const s = statusStyle(statusId);
+  const display = label ?? (statusId != null ? "ไม่ระบุ" : "—");
+  return (
+    <span
+      title={label ?? (statusId != null ? `สถานะ #${statusId}` : undefined)}
+      className={`inline-block max-w-[min(11rem,100%)] truncate align-middle rounded-md border px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${s.badge}`}
+    >
+      {display}
+    </span>
+  );
+}
+
 export function StatusDot({ statusId }: { statusId: number | null }) {
   return <span className={`w-2 h-2 rounded-full shrink-0 ${statusStyle(statusId).dot}`} />;
 }
 
 export function formatDate(d: string | null) {
-  if (!d) return "—";
-  const [y, m, day] = d.slice(0, 10).split("-");
-  return `${day}/${m}/${y}`;
+  return formatWireDateAsDMY(d);
+}
+
+/** บรรทัดหัวมือถือ: ผู้จอง | ผู้รับเหมา */
+function bookerClientHeadline(req: RequestView): string {
+  const b = req.booked_by_name?.trim();
+  const c = req.client_name?.trim();
+  if (b && c) return `${b} | ${c}`;
+  if (b) return b;
+  if (c) return c;
+  return "—";
 }
 
 /* ── Dashboard “รายการล่าสุด” — readable multi-line row (mobile-first) ─ */
 function RequestRowMinimal({ req }: { req: RequestView }) {
   const s = statusStyle(req.status_id);
+  const booker = req.booked_by_name?.trim() || req.client_name?.trim() || null;
   return (
     <Link
       href={`/requests/${req.id}`}
@@ -57,34 +83,30 @@ function RequestRowMinimal({ req }: { req: RequestView }) {
       <span className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white ${s.dot}`} aria-hidden />
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-zinc-900 tabular-nums tracking-tight">
-              {formatDate(req.request_date)}
-              {req.request_time && (
-                <span className="text-xs font-normal text-zinc-400 tabular-nums ml-1.5">{req.request_time.slice(0, 5)}</span>
-              )}
+          <div className="min-w-0 flex-1">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-zinc-900 tabular-nums tracking-tight">
+              <span className="shrink-0">
+                {formatDate(req.request_date)}
+                {req.request_time && (
+                  <span className="text-xs font-normal text-zinc-400 tabular-nums ml-1.5">{req.request_time.slice(0, 5)}</span>
+                )}
+              </span>
+              <StatusBadgeCompact statusId={req.status_id} statusName={req.status_name} />
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-600 truncate" title={booker ?? undefined}>
+              {booker ?? "—"}
             </p>
           </div>
-          <div className="flex items-baseline gap-1 shrink-0 text-right">
-            <span className="text-base font-bold text-zinc-900 tabular-nums leading-none">
-              {formatVolumeM3(req.volume_request)}
-            </span>
-            <span className="text-[11px] font-medium text-zinc-400">m³</span>
+          <div className="flex shrink-0 flex-col items-end justify-start text-right">
+            <div className="flex items-baseline gap-1">
+              <span className="text-base font-bold text-zinc-900 tabular-nums leading-none">
+                {formatVolumeM3(req.volume_request)}
+              </span>
+              <span className="text-[11px] font-medium text-zinc-400">m³</span>
+            </div>
           </div>
         </div>
         <p className="text-[13px] text-zinc-600 leading-snug line-clamp-2">{req.full_location ?? "—"}</p>
-        {(req.mixcode || req.status_name) && (
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-tight">
-            {req.mixcode && (
-              <span className="inline-flex font-mono font-semibold text-orange-700 bg-orange-50 border border-orange-100/80 px-2 py-0.5 rounded-md">
-                {req.mixcode}
-              </span>
-            )}
-            {req.status_name && (
-              <span className="text-zinc-500 truncate max-w-full">{req.status_name}</span>
-            )}
-          </p>
-        )}
       </div>
       <div className="flex shrink-0 items-center self-center pt-0.5">
         <svg className="w-4 h-4 text-zinc-300 group-hover:text-orange-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -108,7 +130,8 @@ function RequestCard({ req }: { req: RequestView }) {
       </div>
       <div className="w-px h-8 bg-zinc-100 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-zinc-800 truncate">
+        <p className="text-xs font-semibold text-zinc-800 truncate">{bookerClientHeadline(req)}</p>
+        <p className="text-xs text-zinc-700 truncate mt-0.5">
           {req.full_location ?? "—"}
           {req.structure_no && <span className="font-normal text-zinc-400"> · {req.structure_no}</span>}
         </p>
@@ -138,7 +161,7 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-zinc-800 truncate">{req.client_name ?? "ไม่ระบุผู้รับเหมา"}</p>
+          <p className="text-xs font-semibold text-zinc-800 truncate">{bookerClientHeadline(req)}</p>
           <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{req.full_location ?? "—"}</p>
         </div>
         <div className="flex items-center gap-1 shrink-0">

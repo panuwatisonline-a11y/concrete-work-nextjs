@@ -1,4 +1,12 @@
-import { getClients, getLocations, getConcreteWorks, getMixedCodes, getWBSCodes, getABCCodes, getVolumeByMixcode } from "@/lib/supabase/queries";
+import {
+  getClients,
+  getLocations,
+  getConcreteWorks,
+  getMixedCodes,
+  getWBSCodes,
+  getABCCodes,
+  getVolumeByMixcode,
+} from "@/lib/supabase/queries";
 import BookingForm from "./BookingForm";
 import Link from "next/link";
 import { AppLogo } from "@/components/ui";
@@ -22,32 +30,35 @@ export default async function BookPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const [{ data: profile }, clients, locations, concreteWorks, mixedCodes, wbsCodes, abcCodes, volRows] =
+    await Promise.all([
+      user
+        ? supabase.from("profiles").select("fname, lname, phone, client_id").eq("id", user.id).maybeSingle()
+        : Promise.resolve({ data: null as null }),
+      getClients(),
+      getLocations(),
+      getConcreteWorks(),
+      getMixedCodes(),
+      getWBSCodes(),
+      getABCCodes(),
+      getVolumeByMixcode(),
+    ]);
+
   let requester: { fullName: string; phone: string | null } | null = null;
+  let profileClientId: number | null = null;
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("fname, lname, phone")
-      .eq("id", user.id)
-      .maybeSingle();
     const fullName = [profile?.fname, profile?.lname].filter(Boolean).join(" ").trim();
     requester = {
       fullName: fullName || "—",
       phone: profile?.phone?.trim() ? profile.phone.trim() : null,
     };
+    profileClientId = profile?.client_id ?? null;
   }
-
-  const [clients, locations, concreteWorks, mixedCodes, wbsCodes, abcCodes, volRows] = await Promise.all([
-    getClients(),
-    getLocations(),
-    getConcreteWorks(),
-    getMixedCodes(),
-    getWBSCodes(),
-    getABCCodes(),
-    getVolumeByMixcode(),
-  ]);
 
   const volumeUsedByMixcode = Object.fromEntries(volRows.map((r) => [r.mixcode_id, r.volume_used]));
   const defaultCastingDate = bangkokYMDPlusDays(2);
+  const defaultClientId =
+    profileClientId != null && clients.some((c) => c.id === profileClientId) ? profileClientId : null;
 
   return (
     <main className="min-h-screen bg-zinc-50">
@@ -71,6 +82,7 @@ export default async function BookPage() {
         </div>
         <BookingForm
           clients={clients}
+          defaultClientId={defaultClientId}
           locations={locations}
           concreteWorks={concreteWorks}
           mixedCodes={mixedCodes}

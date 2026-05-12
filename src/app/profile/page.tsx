@@ -8,15 +8,8 @@ import TabNav from "@/components/TabNav";
 import BottomNav from "@/components/BottomNav";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { AppLogo, BtnGhost, Card, CardHeader } from "@/components/ui";
-
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-4 py-2.5 border-b border-zinc-100 last:border-0">
-      <dt className="text-xs font-medium text-zinc-400 shrink-0 sm:w-36">{label}</dt>
-      <dd className="text-sm text-zinc-800 break-words">{value ?? "—"}</dd>
-    </div>
-  );
-}
+import ProfileEditForm from "./ProfileEditForm";
+import { formatIsoDateTimeBangkok } from "@/lib/date-display";
 
 export default async function ProfilePage() {
   if (!isSupabaseConfigured()) {
@@ -40,13 +33,14 @@ export default async function ProfilePage() {
 
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
 
-  let jobName: string | null = null;
-  if (profile?.Job != null) {
-    const { data: job } = await supabase.from("Jobs").select("job_name").eq("id", profile.Job).maybeSingle();
-    jobName = job?.job_name ?? null;
-  }
+  const { data: jobsData } = await supabase.from("Jobs").select("id, job_name").order("job_name");
+  const jobs = jobsData ?? [];
 
-  const fullName = [profile?.fname, profile?.lname].filter(Boolean).join(" ").trim();
+  const { data: clientsData } = await supabase.from("Client").select("id, client_name").order("client_name");
+  const clients = (clientsData ?? []).map((c) => ({
+    id: c.id,
+    client_name: (c.client_name ?? "").trim() || `ลูกค้า #${c.id}`,
+  }));
 
   return (
     <main className="min-h-screen bg-zinc-50">
@@ -86,16 +80,32 @@ export default async function ProfilePage() {
                 </BtnGhost>
               </div>
             ) : (
-              <dl>
-                <Row label="ชื่อ-นามสกุล" value={fullName || null} />
-                <Row label="อีเมล (Auth)" value={user.email ?? null} />
-                <Row label="รหัสพนักงาน" value={profile.employee_id} />
-                <Row label="เบอร์โทร" value={profile.phone} />
-                <Row label="บทบาท" value={profile.role} />
-                <Row label="งาน (Job)" value={jobName ?? (profile.Job != null ? `#${profile.Job}` : null)} />
-                <Row label="สร้างเมื่อ" value={profile.created_at ? new Date(profile.created_at).toLocaleString("th-TH") : null} />
-                <Row label="อัปเดตล่าสุด" value={profile.updated_at ? new Date(profile.updated_at).toLocaleString("th-TH") : null} />
-              </dl>
+              <ProfileEditForm
+                key={[
+                  profile.fname,
+                  profile.lname,
+                  profile.phone,
+                  profile.Job ?? "",
+                  profile.client_id ?? "",
+                  profile.client_name ?? "",
+                  profile.updated_at,
+                ].join("\u0001")}
+                email={user.email ?? null}
+                employeeId={profile.employee_id}
+                role={profile.role}
+                jobs={jobs}
+                clients={clients}
+                initialJobId={profile.Job}
+                initialClientId={profile.client_id}
+                cachedClientName={profile.client_name}
+                createdAt={profile.created_at ? formatIsoDateTimeBangkok(profile.created_at) : null}
+                updatedAt={profile.updated_at ? formatIsoDateTimeBangkok(profile.updated_at) : null}
+                initial={{
+                  fname: profile.fname,
+                  lname: profile.lname,
+                  phone: profile.phone,
+                }}
+              />
             )}
           </div>
         </Card>

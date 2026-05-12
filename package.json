@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "kill-port 3000 && next dev --turbopack",
     "build": "next build --webpack",
     "start": "next start",
     "sync-fix": "node scripts/copy-supabase-fix.cjs"
@@ -21,6 +21,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "kill-port": "^2.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vercel": "^53.3.2"

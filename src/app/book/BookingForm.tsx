@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { createBooking, type BookingState } from "./actions";
 import { Select } from "@/components/Select";
 import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls } from "@/components/ui";
+import { formatIsoDateTimeBangkok } from "@/lib/date-display";
 import type { Location, ConcreteWork, MixedCode, WBSCode, ABCCode, Client } from "@/lib/supabase/queries";
 
 type RequesterPreview = {
@@ -14,6 +15,8 @@ type RequesterPreview = {
 
 type Props = {
   clients: Client[];
+  /** client_id จาก profiles — ตั้งเป็นค่าเริ่มต้นเมื่อมีในรายการ Client */
+  defaultClientId: number | null;
   locations: Location[];
   concreteWorks: ConcreteWork[];
   mixedCodes: MixedCode[];
@@ -27,6 +30,11 @@ type Props = {
 };
 
 const initialState: BookingState = {};
+
+/** ป้องกันเลื่อนล้อเมาส์แล้วค่าใน input number เปลี่ยนโดยไม่ตั้งใจ */
+function blurNumberInputOnWheel(e: WheelEvent<HTMLInputElement>) {
+  e.currentTarget.blur();
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -102,6 +110,7 @@ function uniqueSortedSuppliers(rows: MixedCode[]): string[] {
 
 export default function BookingForm({
   clients,
+  defaultClientId,
   locations,
   concreteWorks,
   mixedCodes,
@@ -222,18 +231,17 @@ export default function BookingForm({
 
   const err = state.fieldErrors ?? {};
 
-  const requestDisplay = useMemo(
-    () =>
-      requestedAt.toLocaleString("th-TH", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }),
-    [requestedAt],
+  const requestDisplay = useMemo(() => formatIsoDateTimeBangkok(requestedAt), [requestedAt]);
+
+  const clientSelectOptions = useMemo(
+    () => clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" })),
+    [clients],
   );
+
+  const clientSelectKey = useMemo(() => {
+    const ids = [...clients].map((c) => c.id).sort((a, b) => a - b);
+    return `client-${defaultClientId ?? "none"}-${ids.join(",")}`;
+  }, [clients, defaultClientId]);
 
   return (
     <form ref={formRef} action={action} className="space-y-3">
@@ -324,10 +332,12 @@ export default function BookingForm({
         <div>
           <Label required>ผู้รับเหมา</Label>
           <Select
+            key={clientSelectKey}
             name="client_id"
             placeholder="— เลือกผู้รับเหมา —"
             required
-            options={clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" }))}
+            defaultValue={defaultClientId != null ? String(defaultClientId) : ""}
+            options={clientSelectOptions}
           />
           <FieldError msg={err.client_id} />
         </div>
@@ -442,6 +452,9 @@ export default function BookingForm({
             className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`}
             value={selectedMix?.slump?.trim() ? selectedMix.slump : "—"}
           />
+          <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
+            ค่านี้มาจากข้อมูล Mix Code ที่เลือก ไม่ได้พิมพ์ในฟอร์มจอง
+          </p>
         </div>
         <div>
           <Label>ยอดคงเหลือของ Mix Code (m³)</Label>
@@ -462,17 +475,40 @@ export default function BookingForm({
         <Row>
           <div>
             <Label>ปริมาณตามแบบ (m³)</Label>
-            <input type="number" name="volume_dwg" min="0" step="0.01" className={inputCls} placeholder="0.00" />
+            <input
+              type="number"
+              name="volume_dwg"
+              min="0"
+              step="0.01"
+              className={inputCls}
+              placeholder="0.00"
+              onWheel={blurNumberInputOnWheel}
+            />
+            <FieldError msg={err.volume_dwg} />
           </div>
           <div>
             <Label required>ปริมาณที่ขอ (m³)</Label>
-            <input type="number" name="volume_request" min="0.01" step="0.01" className={inputCls} placeholder="0.00" required />
+            <input
+              type="number"
+              name="volume_request"
+              min="0.01"
+              step="0.01"
+              className={inputCls}
+              placeholder="0.00"
+              required
+              onWheel={blurNumberInputOnWheel}
+            />
+            <p className="mt-1 text-[10px] text-zinc-400">อย่าเลื่อนล้อเมาส์บนช่องนี้ขณะโฟกัส — เบราว์เซอร์อาจลด/เพิ่มทีละ 0.01 โดยไม่ตั้งใจ</p>
             <FieldError msg={err.volume_request} />
           </div>
         </Row>
         <div>
           <Label>จำนวนตัวอย่าง (ก้อน)</Label>
-          <input type="number" name="sample_qty" min="0" step="1" className={inputCls} defaultValue={9} />
+          <input type="number" name="sample_qty" min="0" step="1" className={inputCls} defaultValue={9} onWheel={blurNumberInputOnWheel} />
+          <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
+            บันทึกเฉพาะจำนวนก้อน — ข้อความในวงเล็บเช่น Cylinder เป็นค่าจาก Mix Code ที่หน้ารายละเอียดจะแสดงตามนั้น
+          </p>
+          <FieldError msg={err.sample_qty} />
         </div>
       </Section>
 

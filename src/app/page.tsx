@@ -32,12 +32,8 @@ export default async function LoginPage() {
   return (
     <main className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-1">
-          <div className="flex justify-center">
-            <AppLogo />
-          </div>
-          <h1 className="text-lg font-semibold text-zinc-900">เข้าสู่ระบบ</h1>
-          <p className="text-xs text-zinc-500">Concrete Works</p>
+        <div className="flex justify-center">
+          <AppLogo />
         </div>
         <Card className="p-6 shadow-sm shadow-zinc-900/5">
           <LoginForm />

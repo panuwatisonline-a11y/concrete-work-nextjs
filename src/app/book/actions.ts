@@ -31,6 +31,26 @@ function normName(s: string) {
   return s.trim().toLowerCase();
 }
 
+/** รับค่าจาก input ตัวเลข (รองรับการวางค่าที่มี comma คั่นหลัก) */
+function parseDecimalInput(s: string | null | undefined): number | null {
+  if (s == null) return null;
+  const t = String(s).trim().replace(/\s/g, "").replace(/,/g, "");
+  if (t === "") return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseIntInput(s: string | null | undefined): number | null {
+  if (s == null) return null;
+  const t = String(s).trim().replace(/\s/g, "").replace(/,/g, "");
+  if (t === "") return null;
+  const n = Number.parseInt(t, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** สถานะเริ่มต้นของคำขอใหม่ (ตรงกับแถว id = 1 ในตาราง Status) */
+const DEFAULT_NEW_REQUEST_STATUS_ID = 1;
+
 export async function createBooking(
   _prevState: BookingState,
   formData: FormData
@@ -61,8 +81,17 @@ export async function createBooking(
   if (!raw.structure_pick?.trim()) fieldErrors.structure_pick = "กรุณาเลือกโครงสร้าง";
   if (!raw.concrete_work_id) fieldErrors.concrete_work_id = "กรุณาเลือกประเภทงาน";
   if (!raw.mixcode_id) fieldErrors.mixcode_id = "กรุณาเลือก Mix Code";
-  if (!raw.volume_request || Number(raw.volume_request) <= 0)
-    fieldErrors.volume_request = "กรุณาระบุปริมาณที่ขอ";
+
+  const volume_request = parseDecimalInput(raw.volume_request);
+  if (volume_request == null || volume_request <= 0) {
+    fieldErrors.volume_request = "กรุณาระบุปริมาณที่ขอเป็นตัวเลขมากกว่า 0";
+  }
+
+  const volume_dwg = parseDecimalInput(raw.volume_dwg);
+  if (volume_dwg != null && volume_dwg < 0) fieldErrors.volume_dwg = "ปริมาณตามแบบต้องไม่ติดลบ";
+
+  const sample_qty = parseIntInput(raw.sample_qty);
+  if (sample_qty != null && sample_qty < 0) fieldErrors.sample_qty = "จำนวนตัวอย่างต้องไม่ติดลบ";
 
   if (Object.keys(fieldErrors).length > 0) {
     return { fieldErrors };
@@ -97,6 +126,7 @@ export async function createBooking(
   const payload = {
     request_date,
     request_time,
+    status_id: DEFAULT_NEW_REQUEST_STATUS_ID,
     booked_by: user.id,
     booked_at: bookedAt,
     casting_date: raw.casting_date || null,
@@ -108,10 +138,10 @@ export async function createBooking(
     wbs_code_id: raw.wbs_code_id ? Number(raw.wbs_code_id) : null,
     abc_code_id: raw.abc_code_id ? Number(raw.abc_code_id) : null,
     mixcode_id: raw.mixcode_id ? Number(raw.mixcode_id) : null,
-    strength: raw.strength ? Number(raw.strength) : null,
-    volume_dwg: raw.volume_dwg ? Number(raw.volume_dwg) : null,
-    volume_request: raw.volume_request ? Number(raw.volume_request) : null,
-    sample_qty: raw.sample_qty ? Number(raw.sample_qty) : null,
+    strength: parseIntInput(raw.strength),
+    volume_dwg: volume_dwg ?? null,
+    volume_request: volume_request!,
+    sample_qty: sample_qty ?? null,
     remarks: remarksMerged,
   };
 

@@ -211,6 +211,24 @@ export type Database = {
         }
         Relationships: []
       }
+      Contractors: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
       Jobs: {
         Row: {
           id: number
@@ -291,6 +309,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          client_id: number | null
+          client_name: string | null
           created_at: string | null
           employee_id: string | null
           fname: string | null
@@ -302,6 +322,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          client_id?: number | null
+          client_name?: string | null
           created_at?: string | null
           employee_id?: string | null
           fname?: string | null
@@ -313,6 +335,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          client_id?: number | null
+          client_name?: string | null
           created_at?: string | null
           employee_id?: string | null
           fname?: string | null
@@ -324,6 +348,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_Job_fkey"
             columns: ["Job"]

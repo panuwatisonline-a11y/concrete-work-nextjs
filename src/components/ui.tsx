@@ -74,11 +74,11 @@ export function Section({ title, children, className = "" }: { title: string; ch
 /* ── App Logo ────────────────────────────────────────────────────── */
 export function AppLogo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2 group min-w-0">
-      <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
+    <Link href="/dashboard" className="flex items-center gap-2.5 group min-w-0">
+      <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
         C
       </div>
-      <span className="text-sm font-semibold text-zinc-900 group-hover:text-orange-500 transition truncate">
+      <span className="text-xl font-semibold text-zinc-900 group-hover:text-orange-500 transition truncate">
         Concrete Works
       </span>
     </Link>

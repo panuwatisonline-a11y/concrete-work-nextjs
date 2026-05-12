@@ -7,6 +7,7 @@ import {
   parseCastingTimeFromRemarks,
   parseStructurePickFromRemarks,
 } from "@/lib/request-format";
+import { formatIsoBangkokDateAndTime } from "@/lib/date-display";
 import { StatusBadge, formatDate } from "@/components/RequestList";
 import { Card } from "@/components/ui";
 
@@ -45,9 +46,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function TimelineItem({ label, at, by }: { label: string; at: string | null; by: string | null }) {
   if (!at) return null;
-  const d = new Date(at);
-  const date = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const parts = formatIsoBangkokDateAndTime(at);
+  if (!parts) return null;
+  const { date, time } = parts;
   return (
     <div className="flex gap-3 items-start">
       <div className="mt-1.5 w-2 h-2 rounded-full bg-orange-400 shrink-0" />
@@ -129,6 +130,12 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           {req.volume_actual != null && <Field label="ปริมาณจริง (m³)" value={formatVolumeM3(req.volume_actual)} />}
           {req.volume_confirm != null && <Field label="ปริมาณ Confirm (m³)" value={formatVolumeM3(req.volume_confirm)} />}
           <Field label="จำนวนตัวอย่าง" value={req.sample_qty != null ? `${req.sample_qty} ก้อน${req.sample_type ? ` (${req.sample_type})` : ""}` : null} />
+          <div className="col-span-2 pt-2 mt-1 border-t border-zinc-100">
+            <p className="text-[10px] text-zinc-400 leading-relaxed">
+              Mix Code, Slump, Supplier และข้อความในวงเล็บหลังจำนวนตัวอย่างเป็นข้อมูลจากตาราง Mix Code ที่เชื่อมกับคำขอ
+              ส่วนปริมาตรและจำนวนก้อนเป็นค่าที่บันทึกในคำขอโดยตรง
+            </p>
+          </div>
         </Section>
 
         {remarksDisplay && (
