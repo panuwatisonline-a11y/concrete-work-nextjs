@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { createMixedCode, updateMixedCode, type MixedCodeState } from "./actions";
 import type { MixedCode, Structure } from "@/lib/supabase/queries";
 import { MultiSelect } from "@/components/MultiSelect";
-import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls } from "@/components/ui";
+import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls, OptimisticSavingBanner } from "@/components/ui";
+import { useOptimisticSaving } from "@/hooks/useOptimisticSaving";
 
 type Props = { mode: "create" | "edit"; initial?: MixedCode; structures: Structure[] };
 
@@ -26,13 +28,30 @@ function Row({ children }: { children: React.ReactNode }) {
 }
 
 export default function MixedCodeForm({ mode, initial, structures }: Props) {
+  const router = useRouter();
   const action = mode === "create" ? createMixedCode : updateMixedCode;
   const [state, formAction, pending] = useActionState(action, initialState);
   const err = state.fieldErrors ?? {};
+  const hasFieldErrors = Boolean(state.fieldErrors && Object.keys(state.fieldErrors).length > 0);
+  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(Boolean(state.error) || hasFieldErrors);
+  const showSavingUi = optimisticSaving || pending;
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form
+      action={(formData) => {
+        setOptimisticSaving(true);
+        router.prefetch("/mixed-codes");
+        formAction(formData);
+      }}
+      className="space-y-3"
+      aria-busy={showSavingUi}
+    >
       {mode === "edit" && <input type="hidden" name="id" value={initial?.id} />}
+
+      <OptimisticSavingBanner
+        show={showSavingUi}
+        message={mode === "create" ? "กำลังเพิ่ม Mix Code…" : "กำลังบันทึกการแก้ไข…"}
+      />
 
       {state.error && (
         <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs">{state.error}</div>
@@ -90,8 +109,8 @@ export default function MixedCodeForm({ mode, initial, structures }: Props) {
 
       <div className="flex gap-2 justify-end pt-1 pb-4">
         <BtnGhost href="/mixed-codes">ยกเลิก</BtnGhost>
-        <BtnPrimary type="submit" disabled={pending}>
-          {pending ? "กำลังบันทึก…" : mode === "create" ? "ยืนยันการเพิ่ม" : "บันทึก"}
+        <BtnPrimary type="submit" disabled={showSavingUi}>
+          {showSavingUi ? "กำลังบันทึก…" : mode === "create" ? "ยืนยันการเพิ่ม" : "บันทึก"}
         </BtnPrimary>
       </div>
     </form>

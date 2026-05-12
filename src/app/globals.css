@@ -34,3 +34,130 @@ body {
 ::-webkit-scrollbar        { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 99px; }
+
+/* ── Motion (เคารพผู้ใช้ที่ลดแอนิเมชันในระบบ) ───────────────────── */
+@keyframes app-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-dropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes app-modal-surface {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-page-enter {
+  animation: app-page-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-dropdown-in {
+  animation: app-dropdown 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-modal-surface {
+  animation: app-modal-surface 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/**
+ * รายการโผล่ทีละแถว — ใช้กับ container ที่ลูกโดยตรงเป็นแถว/การ์ด
+ * รองรับทั้ง `div > *` และ `tbody > tr`
+ */
+.stagger-rise > *,
+tbody.stagger-rise > tr {
+  animation: app-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.stagger-rise > *:nth-child(1),
+tbody.stagger-rise > tr:nth-child(1) { animation-delay: 0.03s; }
+.stagger-rise > *:nth-child(2),
+tbody.stagger-rise > tr:nth-child(2) { animation-delay: 0.06s; }
+.stagger-rise > *:nth-child(3),
+tbody.stagger-rise > tr:nth-child(3) { animation-delay: 0.09s; }
+.stagger-rise > *:nth-child(4),
+tbody.stagger-rise > tr:nth-child(4) { animation-delay: 0.12s; }
+.stagger-rise > *:nth-child(5),
+tbody.stagger-rise > tr:nth-child(5) { animation-delay: 0.15s; }
+.stagger-rise > *:nth-child(6),
+tbody.stagger-rise > tr:nth-child(6) { animation-delay: 0.18s; }
+.stagger-rise > *:nth-child(7),
+tbody.stagger-rise > tr:nth-child(7) { animation-delay: 0.21s; }
+.stagger-rise > *:nth-child(8),
+tbody.stagger-rise > tr:nth-child(8) { animation-delay: 0.24s; }
+.stagger-rise > *:nth-child(9),
+tbody.stagger-rise > tr:nth-child(9) { animation-delay: 0.27s; }
+.stagger-rise > *:nth-child(10),
+tbody.stagger-rise > tr:nth-child(10) { animation-delay: 0.3s; }
+.stagger-rise > *:nth-child(11),
+tbody.stagger-rise > tr:nth-child(11) { animation-delay: 0.33s; }
+.stagger-rise > *:nth-child(12),
+tbody.stagger-rise > tr:nth-child(12) { animation-delay: 0.36s; }
+.stagger-rise > *:nth-child(13),
+tbody.stagger-rise > tr:nth-child(13) { animation-delay: 0.39s; }
+.stagger-rise > *:nth-child(14),
+tbody.stagger-rise > tr:nth-child(14) { animation-delay: 0.42s; }
+.stagger-rise > *:nth-child(15),
+tbody.stagger-rise > tr:nth-child(15) { animation-delay: 0.45s; }
+.stagger-rise > *:nth-child(16),
+tbody.stagger-rise > tr:nth-child(16) { animation-delay: 0.48s; }
+.stagger-rise > *:nth-child(17),
+tbody.stagger-rise > tr:nth-child(17) { animation-delay: 0.51s; }
+.stagger-rise > *:nth-child(18),
+tbody.stagger-rise > tr:nth-child(18) { animation-delay: 0.54s; }
+.stagger-rise > *:nth-child(19),
+tbody.stagger-rise > tr:nth-child(19) { animation-delay: 0.57s; }
+.stagger-rise > *:nth-child(20),
+tbody.stagger-rise > tr:nth-child(20) { animation-delay: 0.6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-page-enter,
+  .animate-dropdown-in,
+  .animate-modal-surface,
+  .stagger-rise > *,
+  tbody.stagger-rise > tr {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

@@ -81,9 +81,9 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link href={req.status_id ? `/requests?status=${req.status_id}` : "/"} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-50 transition shrink-0">
+          <Link href={req.status_id ? `/requests?status=${req.status_id}` : "/"} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] shrink-0">
             <svg className="w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
@@ -100,7 +100,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
+      <div className="max-w-2xl mx-auto px-4 py-5 space-y-3 stagger-rise">
         <Section title="ข้อมูลการขอ">
           <Field label="วันที่ขอ" value={<>{formatDate(req.request_date)}{req.request_time && <span className="ml-2 text-zinc-400 text-xs">{req.request_time.slice(0, 5)}</span>}</>} />
           <Field label="วันที่เทคอนกรีต" value={formatDate(req.casting_date)} />

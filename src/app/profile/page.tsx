@@ -45,7 +45,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="bg-white border-b border-zinc-100 sticky top-0 z-20 shadow-sm">
+      <header className="sticky top-0 z-20 border-b border-zinc-100 bg-white/90 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
         <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <AppLogo />
           <LogoutButton />
@@ -54,7 +54,7 @@ export default async function ProfilePage() {
 
       <TabNav active="profile" />
 
-      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-5 pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:pb-5">
+      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-5 pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:pb-5 stagger-rise">
         <Card className="overflow-hidden">
           <CardHeader title="โปรไฟล์" />
           <div className="px-4 py-2">

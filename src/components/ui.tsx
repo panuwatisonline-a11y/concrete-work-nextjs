@@ -5,7 +5,8 @@ import type { ReactNode } from "react";
 export const inputCls =
   "w-full bg-white border border-zinc-200 text-zinc-900 rounded-lg px-3 py-2 text-sm " +
   "focus:outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 " +
-  "transition placeholder-zinc-300 disabled:opacity-40";
+  "motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-200 motion-safe:ease-out " +
+  "placeholder-zinc-300 disabled:opacity-40";
 
 /* ── Label / FieldError ──────────────────────────────────────────── */
 export function Label({ children, required }: { children: ReactNode; required?: boolean }) {
@@ -33,13 +34,13 @@ type BtnProps = {
 };
 
 export function BtnPrimary({ children, href, onClick, type = "button", disabled, className = "" }: BtnProps) {
-  const cls = `inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-40 ${className}`;
+  const cls = `inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-[0.985] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm shadow-orange-500/20 hover:shadow-md hover:shadow-orange-500/25 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] disabled:opacity-40 ${className}`;
   if (href) return <Link href={href} className={cls}>{children}</Link>;
   return <button type={type} onClick={onClick} disabled={disabled} className={cls}>{children}</button>;
 }
 
 export function BtnGhost({ children, href, onClick, type = "button", disabled, className = "" }: BtnProps) {
-  const cls = `inline-flex items-center gap-1.5 bg-zinc-100 hover:bg-zinc-200 active:scale-95 text-zinc-700 text-xs font-medium px-3 py-2 rounded-lg transition disabled:opacity-40 ${className}`;
+  const cls = `inline-flex items-center gap-1.5 bg-zinc-100 hover:bg-zinc-200 active:scale-[0.985] text-zinc-700 text-xs font-medium px-3 py-2 rounded-lg motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] disabled:opacity-40 ${className}`;
   if (href) return <Link href={href} className={cls}>{children}</Link>;
   return <button type={type} onClick={onClick} disabled={disabled} className={cls}>{children}</button>;
 }
@@ -47,7 +48,9 @@ export function BtnGhost({ children, href, onClick, type = "button", disabled, c
 /* ── Card ────────────────────────────────────────────────────────── */
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border border-zinc-200 rounded-xl ${className}`}>
+    <div
+      className={`bg-white border border-zinc-200 rounded-xl motion-safe:transition-[box-shadow,transform,border-color] motion-safe:duration-200 motion-safe:ease-out hover:shadow-md hover:shadow-zinc-900/[0.06] hover:border-zinc-200/80 ${className}`}
+    >
       {children}
     </div>
   );
@@ -74,11 +77,11 @@ export function Section({ title, children, className = "" }: { title: string; ch
 /* ── App Logo ────────────────────────────────────────────────────── */
 export function AppLogo() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5 group min-w-0">
-      <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+    <Link href="/dashboard" className="flex items-center gap-2.5 group min-w-0 motion-safe:transition-opacity motion-safe:duration-200">
+      <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm shadow-orange-500/30 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04] group-active:scale-[0.97]">
         C
       </div>
-      <span className="text-xl font-semibold text-zinc-900 group-hover:text-orange-500 transition truncate">
+      <span className="text-xl font-semibold text-zinc-900 group-hover:text-orange-500 motion-safe:transition-colors motion-safe:duration-200 truncate">
         Concrete Works
       </span>
     </Link>
@@ -91,6 +94,30 @@ export function EmptyState({ message = "ไม่พบข้อมูล" }: { 
     <Card className="py-16 text-center">
       <p className="text-sm text-zinc-400">{message}</p>
     </Card>
+  );
+}
+
+/** แสดงทันทีหลังกดส่ง (Optimistic UI) ก่อนเซิร์ฟเวอร์ตอบ */
+export function OptimisticSavingBanner({ show, message }: { show: boolean; message: string }) {
+  if (!show) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 shadow-sm shadow-sky-900/5 flex items-center gap-2.5"
+    >
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white" aria-hidden>
+        <svg className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+          <path
+            className="opacity-90"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      </span>
+      <span className="font-medium leading-snug">{message}</span>
+    </div>
   );
 }
 

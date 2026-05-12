@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { RequestView } from "@/lib/supabase/queries";
+import type { RequestViewListItem } from "@/lib/supabase/queries";
 import { formatWireDateAsDMY } from "@/lib/date-display";
 import { formatRemarksForDisplay, formatVolumeM3, parseStructurePickFromRemarks } from "@/lib/request-format";
 import { Card } from "@/components/ui";
@@ -62,7 +62,7 @@ export function formatDate(d: string | null) {
 }
 
 /** บรรทัดหัวมือถือ: ผู้จอง | ผู้รับเหมา */
-function bookerClientHeadline(req: RequestView): string {
+function bookerClientHeadline(req: RequestViewListItem): string {
   const b = req.booked_by_name?.trim();
   const c = req.client_name?.trim();
   if (b && c) return `${b} | ${c}`;
@@ -72,13 +72,13 @@ function bookerClientHeadline(req: RequestView): string {
 }
 
 /* ── Dashboard “รายการล่าสุด” — readable multi-line row (mobile-first) ─ */
-function RequestRowMinimal({ req }: { req: RequestView }) {
+function RequestRowMinimal({ req }: { req: RequestViewListItem }) {
   const s = statusStyle(req.status_id);
   const booker = req.booked_by_name?.trim() || req.client_name?.trim() || null;
   return (
     <Link
       href={`/requests/${req.id}`}
-      className="flex gap-3 px-4 py-3.5 hover:bg-zinc-50/90 active:bg-zinc-50 border-b border-zinc-100 last:border-b-0 transition-colors group"
+      className="flex gap-3 px-4 py-3.5 hover:bg-zinc-50/90 active:bg-zinc-50 border-b border-zinc-100 last:border-b-0 motion-safe:transition-[background-color,transform] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-0.5 active:scale-[0.995] group"
     >
       <span className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white ${s.dot}`} aria-hidden />
       <div className="flex-1 min-w-0 space-y-1.5">
@@ -118,11 +118,11 @@ function RequestRowMinimal({ req }: { req: RequestView }) {
 }
 
 /* ── Standard compact card (status page) ─────────────────────────── */
-function RequestCard({ req }: { req: RequestView }) {
+function RequestCard({ req }: { req: RequestViewListItem }) {
   return (
     <Link
       href={`/requests/${req.id}`}
-      className="bg-white border border-zinc-200 rounded-xl px-4 py-3.5 flex items-center gap-3 hover:border-zinc-300 hover:bg-zinc-50 transition-colors active:scale-[0.99]"
+      className="bg-white border border-zinc-200 rounded-xl px-4 py-3.5 flex items-center gap-3 hover:border-zinc-300/90 hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.04] active:scale-[0.992]"
     >
       <div className="shrink-0 text-center w-12">
         <p className="text-[11px] font-semibold text-zinc-700 tabular-nums leading-tight">{formatDate(req.request_date)}</p>
@@ -152,12 +152,12 @@ function RequestCard({ req }: { req: RequestView }) {
 }
 
 /* ── Detailed card (status page) ─────────────────────────────────── */
-function RequestCardDetailed({ req }: { req: RequestView }) {
+function RequestCardDetailed({ req }: { req: RequestViewListItem }) {
   const note = formatRemarksForDisplay(req.remarks);
   return (
     <Link
       href={`/requests/${req.id}`}
-      className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3 hover:border-zinc-300 hover:bg-zinc-50 transition-colors block active:scale-[0.99]"
+      className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3 hover:border-zinc-300/90 hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.05] block active:scale-[0.992]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -194,7 +194,7 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
 }
 
 /* ── Desktop table row ───────────────────────────────────────────── */
-function RequestRow({ req }: { req: RequestView }) {
+function RequestRow({ req }: { req: RequestViewListItem }) {
   const cells: React.ReactNode[] = [
     <>{formatDate(req.request_date)}{req.request_time && <span className="ml-1.5 text-zinc-400 tabular-nums">{req.request_time.slice(0, 5)}</span>}</>,
     req.client_name ?? "—",
@@ -204,7 +204,7 @@ function RequestRow({ req }: { req: RequestView }) {
     req.mixcode ?? "—",
   ];
   return (
-    <tr className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
+    <tr className="border-b border-zinc-100 hover:bg-zinc-50 motion-safe:transition-colors motion-safe:duration-150">
       {cells.map((cell, i) => (
         <td key={i} className="px-4 py-3 text-xs text-zinc-700">
           <Link href={`/requests/${req.id}`} className="block">{cell}</Link>
@@ -228,7 +228,7 @@ export function RequestList({
   variant = "compact",
   minimal = false,
 }: {
-  requests: RequestView[];
+  requests: RequestViewListItem[];
   variant?: "compact" | "detailed";
   minimal?: boolean;
 }) {
@@ -242,7 +242,7 @@ export function RequestList({
 
   if (minimal) {
     return (
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm stagger-rise">
         {requests.map((req) => <RequestRowMinimal key={req.id} req={req} />)}
       </div>
     );
@@ -251,7 +251,7 @@ export function RequestList({
   return (
     <>
       {/* Mobile */}
-      <div className="md:hidden space-y-2">
+      <div className="md:hidden space-y-2 stagger-rise">
         {requests.map((req) =>
           variant === "detailed"
             ? <RequestCardDetailed key={req.id} req={req} />
@@ -259,7 +259,7 @@ export function RequestList({
         )}
       </div>
       {/* Desktop */}
-      <div className="hidden md:block bg-white border border-zinc-200 rounded-xl overflow-hidden">
+      <div className="hidden md:block bg-white border border-zinc-200 rounded-xl overflow-hidden motion-safe:transition-shadow motion-safe:duration-200 hover:shadow-md hover:shadow-zinc-900/[0.04]">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -271,7 +271,7 @@ export function RequestList({
                 ))}
               </tr>
             </thead>
-            <tbody>{requests.map((req) => <RequestRow key={req.id} req={req} />)}</tbody>
+            <tbody className="stagger-rise">{requests.map((req) => <RequestRow key={req.id} req={req} />)}</tbody>
           </table>
         </div>
       </div>

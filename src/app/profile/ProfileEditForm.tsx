@@ -4,7 +4,8 @@ import { useActionState, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile, type ProfileUpdateState } from "./actions";
 import { Select } from "@/components/Select";
-import { BtnGhost, BtnPrimary, FieldError, Label, inputCls } from "@/components/ui";
+import { BtnGhost, BtnPrimary, FieldError, Label, inputCls, OptimisticSavingBanner } from "@/components/ui";
+import { useOptimisticSaving } from "@/hooks/useOptimisticSaving";
 
 const initialState: ProfileUpdateState = {};
 
@@ -45,7 +46,10 @@ function ProfileEditModePanel({
   onCancel,
   onSaved,
 }: EditPanelProps) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(updateProfile, initialState);
+  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(Boolean(state.error) || Boolean(state.success));
+  const showSavingUi = optimisticSaving || pending;
 
   useEffect(() => {
     if (state.success) {
@@ -54,7 +58,16 @@ function ProfileEditModePanel({
   }, [state.success, onSaved]);
 
   return (
-    <form action={action} className="space-y-4">
+    <form
+      action={(formData) => {
+        setOptimisticSaving(true);
+        router.prefetch("/profile");
+        action(formData);
+      }}
+      className="space-y-4"
+      aria-busy={showSavingUi}
+    >
+      <OptimisticSavingBanner show={showSavingUi} message="กำลังบันทึกโปรไฟล์…" />
       <p className="text-xs text-zinc-500">
         แก้ไขชื่อ เบอร์ติดต่อ โครงการ และบริษัท/ผู้รับเหมา (จาก Client) — รหัสพนักงานและบทบาทจัดการผ่านผู้ดูแลระบบ
       </p>
@@ -100,10 +113,10 @@ function ProfileEditModePanel({
       <FieldError msg={state.error} />
       {state.success ? <p className="text-xs text-emerald-600">บันทึกแล้ว</p> : null}
       <div className="flex flex-wrap gap-2">
-        <BtnPrimary type="submit" disabled={pending}>
-          {pending ? "กำลังบันทึก…" : "บันทึกการแก้ไข"}
+        <BtnPrimary type="submit" disabled={showSavingUi}>
+          {showSavingUi ? "กำลังบันทึก…" : "บันทึกการแก้ไข"}
         </BtnPrimary>
-        <BtnGhost type="button" disabled={pending} onClick={onCancel}>
+        <BtnGhost type="button" disabled={showSavingUi} onClick={onCancel}>
           ยกเลิก
         </BtnGhost>
       </div>

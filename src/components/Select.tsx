@@ -74,7 +74,7 @@ export function Select({
       <div
         ref={menuRef}
         style={{ position: "fixed", top: menuPos.top, left: menuPos.left, width: menuPos.width }}
-        className="z-[100] bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden"
+        className="z-[100] bg-white border border-zinc-200 rounded-xl shadow-lg shadow-zinc-900/10 overflow-hidden animate-dropdown-in"
         role="listbox"
         aria-labelledby={id}
       >
@@ -128,7 +128,7 @@ export function Select({
         disabled={disabled}
         onClick={() => !disabled && setOpen((v) => !v)}
         className={[
-          "w-full flex items-center justify-between gap-2 bg-white border rounded-lg pl-3 pr-2.5 py-2 text-sm text-left transition focus:outline-none focus:ring-2 focus:ring-zinc-100",
+          "w-full flex items-center justify-between gap-2 bg-white border rounded-lg pl-3 pr-2.5 py-2 text-sm text-left motion-safe:transition-[border-color,box-shadow,transform] motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] focus:outline-none focus:ring-2 focus:ring-zinc-100 active:scale-[0.997]",
           disabled ? "opacity-50 cursor-not-allowed bg-zinc-50" : "",
           open && !disabled ? "border-zinc-400" : "border-zinc-200 hover:border-zinc-300",
           selected ? "text-zinc-900" : "text-zinc-300",

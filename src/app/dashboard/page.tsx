@@ -16,7 +16,7 @@ function StatusItem({
   return (
     <Link
       href={`/requests?status=${statusId}`}
-      className="flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-zinc-50 rounded-xl border border-zinc-200 transition-all hover:shadow-sm active:scale-[0.99] group"
+      className="flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-zinc-50 rounded-xl border border-zinc-200 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-md hover:shadow-zinc-900/[0.05] hover:border-zinc-200/90 active:scale-[0.992] group"
     >
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-0.5 ${s.dot}`} />
       <span className="text-sm text-zinc-700 flex-1 min-w-0 leading-snug">{label}</span>
@@ -44,7 +44,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="bg-white border-b border-zinc-100 sticky top-0 z-20 shadow-sm">
+      <header className="sticky top-0 z-20 border-b border-zinc-100 bg-white/90 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
         <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <AppLogo />
@@ -65,7 +65,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               {count.toLocaleString()} <span className="text-xs font-normal text-zinc-400">รายการ</span>
             </span>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 stagger-rise">
             {statusSummary.map((s) => (
               <StatusItem key={s.status_id} statusId={s.status_id} label={s.status_name} value={s.count} total={count} />
             ))}

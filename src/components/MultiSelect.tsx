@@ -44,7 +44,7 @@ function MultiSelectPortal({
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-surface">
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-gray-100">
           <h3 className="text-base font-bold text-gray-900">{title}</h3>

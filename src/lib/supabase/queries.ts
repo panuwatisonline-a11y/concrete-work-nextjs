@@ -2,7 +2,44 @@ import { createReadonlyClient } from "@/lib/supabase/readonly";
 import type { Tables } from "@/types/database.types";
 
 export type RequestView = Tables<"Request_View">;
+/** คอลัมน์ที่หน้ารายการคำขอใช้ — ลด payload จาก Request_View */
+export type RequestViewListItem = Pick<
+  RequestView,
+  | "id"
+  | "request_date"
+  | "request_time"
+  | "booked_by_name"
+  | "client_name"
+  | "full_location"
+  | "structure_no"
+  | "concrete_work"
+  | "mixcode"
+  | "volume_request"
+  | "status_id"
+  | "status_name"
+  | "casting_date"
+  | "structure_name"
+  | "remarks"
+>;
 export type Status = Tables<"Status">;
+
+const REQUEST_VIEW_LIST_SELECT = [
+  "id",
+  "request_date",
+  "request_time",
+  "booked_by_name",
+  "client_name",
+  "full_location",
+  "structure_no",
+  "concrete_work",
+  "mixcode",
+  "volume_request",
+  "status_id",
+  "status_name",
+  "casting_date",
+  "structure_name",
+  "remarks",
+].join(",");
 export type Location = Tables<"Location">;
 export type Structure = Tables<"Structure">;
 export type Client = Tables<"Client">;
@@ -34,13 +71,13 @@ export async function getRequestsByStatus(statusId: number, limit = 200, offset 
   if (!supabase) return { data: [], count: 0 };
   const { data, error, count } = await supabase
     .from("Request_View")
-    .select("*", { count: "exact" })
+    .select(REQUEST_VIEW_LIST_SELECT, { count: "estimated" })
     .eq("status_id", statusId)
     .order("created_at", { ascending: false, nullsFirst: false })
     .order("request_date", { ascending: false, nullsFirst: false })
     .range(offset, offset + limit - 1);
   if (error) throw error;
-  return { data: data ?? [], count: count ?? 0 };
+  return { data: (data ?? []) as unknown as RequestViewListItem[], count: count ?? 0 };
 }
 
 export async function getRequestById(id: string): Promise<RequestView | null> {
@@ -61,6 +98,14 @@ export async function getStatusList() {
   const { data, error } = await supabase.from("Status").select("*").order("id");
   if (error) throw error;
   return data ?? [];
+}
+
+export async function getStatusById(id: number): Promise<Status | null> {
+  const supabase = createReadonlyClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("Status").select("id, status_name").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data ?? null;
 }
 
 export async function getStatusSummary() {

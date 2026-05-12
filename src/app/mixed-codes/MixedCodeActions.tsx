@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { MixedCode } from "@/lib/supabase/queries";
 
 const addBtnCls =
-  "inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs font-semibold px-3 py-2 rounded-lg transition";
+  "inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-[0.985] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm shadow-orange-500/20 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]";
 
 export function AddMixedCodeButton() {
   return (
@@ -21,7 +21,7 @@ export function EditMixedCodeButton({ mc }: { mc: MixedCode }) {
   return (
     <Link
       href={`/mixed-codes/${mc.id}/edit`}
-      className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-orange-500 hover:bg-orange-50 transition"
+      className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-orange-500 hover:bg-orange-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.96]"
       title="แก้ไข"
     >
       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

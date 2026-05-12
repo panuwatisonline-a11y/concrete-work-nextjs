@@ -69,7 +69,7 @@ function MCCard({ mc }: { mc: MC }) {
 function MCRow({ mc }: { mc: MC }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   return (
-    <tr className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
+    <tr className="border-b border-zinc-100 hover:bg-zinc-50 motion-safe:transition-colors motion-safe:duration-150">
       <td className="px-4 py-3 font-mono text-xs font-semibold text-orange-500 whitespace-nowrap">{mc.mixcode ?? "—"}</td>
       <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">{mc.supplier ?? "—"}</td>
       <td className="px-4 py-3 text-xs text-zinc-700 whitespace-nowrap">{mc.strength != null ? `${mc.strength} ${mc.strength_type ?? ""}` : "—"}</td>
@@ -101,7 +101,7 @@ export default async function MixedCodesPage() {
   return (
     <main className="min-h-screen bg-zinc-50">
       {/* Top header */}
-      <header className="bg-white border-b border-zinc-100 sticky top-0 z-20 shadow-sm">
+      <header className="sticky top-0 z-20 border-b border-zinc-100 bg-white/90 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
         <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <AppLogo />
@@ -126,12 +126,12 @@ export default async function MixedCodesPage() {
         ) : (
           <>
             {/* Mobile */}
-            <div className="md:hidden space-y-2">
+            <div className="md:hidden space-y-2 stagger-rise">
               {data.map((mc) => <MCCard key={mc.id} mc={mc} />)}
             </div>
 
             {/* Desktop */}
-            <div className="hidden md:block bg-white border border-zinc-200 rounded-xl overflow-hidden">
+            <div className="hidden md:block bg-white border border-zinc-200 rounded-xl overflow-hidden motion-safe:transition-shadow motion-safe:duration-200 hover:shadow-md hover:shadow-zinc-900/[0.04]">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
@@ -141,7 +141,7 @@ export default async function MixedCodesPage() {
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="stagger-rise">
                     {data.map((mc) => <MCRow key={mc.id} mc={mc} />)}
                   </tbody>
                 </table>

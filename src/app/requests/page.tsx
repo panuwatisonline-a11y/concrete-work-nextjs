@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getRequestsByStatus, getStatusList } from "@/lib/supabase/queries";
+import { getRequestsByStatus, getStatusById } from "@/lib/supabase/queries";
 import { RequestList, STATUS_STYLES, FALLBACK_STYLE } from "@/components/RequestList";
 import { AppLogo } from "@/components/ui";
 import { isSupabaseConfigured } from "@/lib/supabase/readonly";
@@ -25,20 +25,19 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const statusId = params.status ? Number(params.status) : null;
   if (!statusId || isNaN(statusId)) notFound();
 
-  const [statuses, { data: requests, count }] = await Promise.all([
-    getStatusList(),
+  const [currentStatus, { data: requests, count }] = await Promise.all([
+    getStatusById(statusId),
     getRequestsByStatus(statusId),
   ]);
 
-  const currentStatus = statuses.find((s) => s.id === statusId);
   if (!currentStatus) notFound();
   const style = STATUS_STYLES[statusId] ?? FALLBACK_STYLE;
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
         <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-50 transition-colors shrink-0">
+          <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-50 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] shrink-0">
             <svg className="w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>

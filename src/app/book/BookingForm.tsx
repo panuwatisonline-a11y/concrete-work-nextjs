@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { createBooking, type BookingState } from "./actions";
 import { Select } from "@/components/Select";
-import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls } from "@/components/ui";
+import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls, OptimisticSavingBanner } from "@/components/ui";
+import { useOptimisticSaving } from "@/hooks/useOptimisticSaving";
 import { formatIsoDateTimeBangkok } from "@/lib/date-display";
 import type { Location, ConcreteWork, MixedCode, WBSCode, ABCCode, Client } from "@/lib/supabase/queries";
 
@@ -120,9 +122,14 @@ export default function BookingForm({
   defaultCastingDate,
   requester,
 }: Props) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(createBooking, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const [requestedAt] = useState(() => new Date());
+
+  const hasFieldErrors = Boolean(state.fieldErrors && Object.keys(state.fieldErrors).length > 0);
+  const [optimisticSaving, setOptimisticSaving] = useOptimisticSaving(Boolean(state.error) || hasFieldErrors);
+  const showSavingUi = optimisticSaving || pending;
 
   const [concreteWorkId, setConcreteWorkId] = useState("");
   const [structurePick, setStructurePick] = useState("");
@@ -244,7 +251,17 @@ export default function BookingForm({
   }, [clients, defaultClientId]);
 
   return (
-    <form ref={formRef} action={action} className="space-y-3">
+    <form
+      ref={formRef}
+      action={(formData) => {
+        setOptimisticSaving(true);
+        router.prefetch("/dashboard");
+        action(formData);
+      }}
+      className="space-y-3 stagger-rise"
+      aria-busy={showSavingUi}
+    >
+      <OptimisticSavingBanner show={showSavingUi} message="กำลังบันทึกคำขอของคุณ…" />
       {state.error && (
         <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl px-4 py-3 text-xs">{state.error}</div>
       )}
@@ -521,8 +538,8 @@ export default function BookingForm({
 
       <div className="flex gap-2 justify-end pt-1 pb-4">
         <BtnGhost href="/dashboard">ยกเลิก</BtnGhost>
-        <BtnPrimary type="submit" disabled={pending || cascadeBlocked || requester == null}>
-          {pending ? "กำลังบันทึก…" : "ยืนยันการจอง"}
+        <BtnPrimary type="submit" disabled={showSavingUi || cascadeBlocked || requester == null}>
+          {showSavingUi ? "กำลังบันทึก…" : "ยืนยันการจอง"}
         </BtnPrimary>
       </div>
     </form>

@@ -38,7 +38,7 @@ export default function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 md:hidden pointer-events-none p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       aria-label="เมนูหลัก"
     >
-      <div className="pointer-events-auto mx-auto flex max-w-lg gap-0.5 rounded-2xl border border-zinc-200 bg-white p-1 shadow-lg shadow-zinc-900/10">
+      <div className="pointer-events-auto mx-auto flex max-w-lg gap-0.5 rounded-2xl border border-zinc-200 bg-white p-1 shadow-lg shadow-zinc-900/10 motion-safe:transition-shadow motion-safe:duration-300">
         {NAV_TABS.map((tab) => {
           const isActive = tabIsActive(tab.id, tab.href, pathname);
           return (
@@ -46,8 +46,8 @@ export default function BottomNav() {
               key={tab.id}
               href={tab.href}
               className={[
-                "relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2.5 transition-colors",
-                isActive ? "bg-orange-50 text-orange-600" : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600",
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-2.5 motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.975]",
+                isActive ? "bg-orange-50 text-orange-600 shadow-sm shadow-orange-500/10" : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600",
               ].join(" ")}
             >
               {ICONS[tab.id]}
