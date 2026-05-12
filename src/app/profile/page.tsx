@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { AppLogo, BtnGhost, Card, CardHeader } from "@/components/ui";
 import ProfileEditForm from "./ProfileEditForm";
+import UpdatePasswordForm from "@/components/auth/UpdatePasswordForm";
 import { formatIsoDateTimeBangkok } from "@/lib/date-display";
 
 export default async function ProfilePage() {
@@ -107,6 +108,16 @@ export default async function ProfilePage() {
                 }}
               />
             )}
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardHeader title="เปลี่ยนรหัสผ่าน" />
+          <div className="px-4 py-4">
+            <p className="text-xs text-zinc-500 mb-3">
+              ตั้งรหัสผ่านใหม่สำหรับบัญชีอีเมลนี้ (ต้องล็อกอินอยู่แล้ว)
+            </p>
+            <UpdatePasswordForm compact />
           </div>
         </Card>
       </div>

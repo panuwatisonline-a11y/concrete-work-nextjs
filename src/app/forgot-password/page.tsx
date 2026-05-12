@@ -4,7 +4,13 @@ import { isSupabaseConfigured } from "@/lib/supabase/readonly";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import { AppLogo, Card } from "@/components/ui";
 
-export default async function ForgotPasswordPage() {
+export default async function ForgotPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const sessionHint = sp.reason === "session";
   if (!isSupabaseConfigured()) {
     return (
       <main className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center px-4 py-12">
@@ -52,6 +58,11 @@ export default async function ForgotPasswordPage() {
           <p className="text-xs text-zinc-500">กรอกอีเมลเพื่อรับลิงก์รีเซ็ตรหัสผ่าน</p>
         </div>
         <Card className="p-6 shadow-sm shadow-zinc-900/5">
+          {sessionHint ? (
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4 leading-relaxed">
+              ลิงก์รีเซ็ตหมดอายุหรือยังไม่ได้เปิดจากอีเมล — กรอกอีเมลด้านล่างเพื่อส่งลิงก์ใหม่
+            </p>
+          ) : null}
           <ForgotPasswordForm />
         </Card>
       </div>
