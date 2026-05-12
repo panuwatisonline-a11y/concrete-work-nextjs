@@ -2,9 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateTag } from "next/cache";
+import { redirect } from "next/navigation";
 
 export type MixedCodeState = {
-  success?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
 };
@@ -41,7 +41,7 @@ export async function createMixedCode(
   if (error) return { error: `บันทึกไม่สำเร็จ: ${error.message}` };
 
   revalidateTag("mixcodes", { expire: 0 });
-  return { success: true };
+  redirect("/mixed-codes");
 }
 
 export async function updateMixedCode(
@@ -60,5 +60,5 @@ export async function updateMixedCode(
   if (error) return { error: `แก้ไขไม่สำเร็จ: ${error.message}` };
 
   revalidateTag("mixcodes", { expire: 0 });
-  return { success: true };
+  redirect("/mixed-codes");
 }

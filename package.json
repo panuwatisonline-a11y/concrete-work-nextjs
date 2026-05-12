@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --webpack",
-    "start": "next start"
+    "start": "next start",
+    "sync-fix": "node scripts/copy-supabase-fix.cjs"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -23,5 +24,12 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vercel": "^53.3.2"
+  },
+  "overrides": {
+    "tar": "^7.5.15",
+    "serialize-javascript": "^7.0.5",
+    "smol-toml": "^1.6.1",
+    "minimatch": "^10.2.5",
+    "@tootallnate/once": "^3.0.1"
   }
 }

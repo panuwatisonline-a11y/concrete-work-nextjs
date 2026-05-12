@@ -1,37 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { NAV_TABS, type NavTabId } from "@/config/nav-tabs";
 
-const TABS = [
-  { id: "home",        label: "รายการคำขอ", href: "/" },
-  { id: "mixed-codes", label: "Mixed Code",  href: "/mixed-codes" },
-] as const;
-
-type TabId = (typeof TABS)[number]["id"];
-
-export default function TabNav({ active }: { active: TabId }) {
+export default function TabNav({ active }: { active: NavTabId }) {
   return (
     /* Desktop only — mobile uses BottomNav */
-    <div className="hidden md:block bg-white border-b border-zinc-100 sticky top-14 z-10">
-      <div className="max-w-screen-2xl mx-auto px-4 flex gap-1">
-        {TABS.map((tab) => {
+    <div className="hidden md:flex justify-center sticky top-14 z-10 px-4 pt-2 pb-3 pointer-events-none">
+      <nav
+        className="pointer-events-auto inline-flex items-center gap-0.5 rounded-2xl border border-zinc-200/90 bg-white p-1 shadow-md shadow-zinc-900/5"
+        aria-label="เมนูหลัก"
+      >
+        {NAV_TABS.map((tab) => {
           const isActive = tab.id === active;
           return (
             <Link
               key={tab.id}
               href={tab.href}
               className={[
-                "relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap",
-                isActive
-                  ? "text-orange-500 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-orange-500 after:rounded-t-full"
-                  : "text-zinc-400 hover:text-zinc-600",
+                "rounded-xl px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+                isActive ? "bg-orange-50 text-orange-600 shadow-sm" : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700",
               ].join(" ")}
             >
               {tab.label}
             </Link>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 }

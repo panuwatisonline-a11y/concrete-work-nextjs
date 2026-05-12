@@ -1,15 +1,29 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { createBooking, type BookingState } from "./actions";
 import { Select } from "@/components/Select";
 import { Label, FieldError, Card, BtnPrimary, BtnGhost, inputCls } from "@/components/ui";
-import type { Client, Location, Structure, ConcreteWork, MixedCode, WBSCode, ABCCode } from "@/lib/supabase/queries";
+import type { Location, ConcreteWork, MixedCode, WBSCode, ABCCode, Client } from "@/lib/supabase/queries";
+
+type RequesterPreview = {
+  fullName: string;
+  phone: string | null;
+};
 
 type Props = {
-  clients: Client[]; locations: Location[]; structures: Structure[];
-  concreteWorks: ConcreteWork[]; mixedCodes: MixedCode[];
-  wbsCodes: WBSCode[]; abcCodes: ABCCode[];
+  clients: Client[];
+  locations: Location[];
+  concreteWorks: ConcreteWork[];
+  mixedCodes: MixedCode[];
+  wbsCodes: WBSCode[];
+  abcCodes: ABCCode[];
+  /** mixcode_id → ปริมาตรที่ใช้ไปแล้วจากคำขอก่อนหน้า */
+  volumeUsedByMixcode: Record<number, number>;
+  defaultCastingDate: string;
+  /** ข้อมูลผู้ขอจาก profiles (ล็อกอินแล้วเท่านั้น) — null ถ้ายังไม่เข้าสู่ระบบ */
+  requester: RequesterPreview | null;
 };
 
 const initialState: BookingState = {};
@@ -29,11 +43,197 @@ function Row({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>;
 }
 
-export default function BookingForm({ clients, locations, structures, concreteWorks, mixedCodes, wbsCodes, abcCodes }: Props) {
+function parseStructureList(s: string | null | undefined): string[] {
+  if (!s?.trim()) return [];
+  return s.split(/[,，]/).map((x) => x.trim()).filter(Boolean);
+}
+
+function norm(s: string) {
+  return s.trim().toLowerCase();
+}
+
+function buildMixedStructureTokenSet(mixedCodes: MixedCode[]): Set<string> {
+  const set = new Set<string>();
+  for (const m of mixedCodes) {
+    for (const t of parseStructureList(m.structure_list)) {
+      set.add(norm(t));
+    }
+  }
+  return set;
+}
+
+function filterConcreteWorksByMixed(concreteWorks: ConcreteWork[], mixedCodes: MixedCode[]): ConcreteWork[] {
+  const tokenSet = buildMixedStructureTokenSet(mixedCodes);
+  return concreteWorks.filter((cw) =>
+    parseStructureList(cw.structure_list).some((t) => tokenSet.has(norm(t))),
+  );
+}
+
+/** dropdown โครงสร้างจากข้อความใน structure_list ของงานคอนกรีต (แยกด้วย comma) */
+function structureTextOptionsFromCw(cw: ConcreteWork | null): { value: string; label: string }[] {
+  if (!cw) return [];
+  return parseStructureList(cw.structure_list).map((label) => ({ value: label, label }));
+}
+
+function mixedCodesForStructureLabel(label: string | null, mixedCodes: MixedCode[]): MixedCode[] {
+  if (!label?.trim()) return [];
+  const n = norm(label);
+  return mixedCodes.filter((m) =>
+    parseStructureList(m.structure_list).some((t) => norm(t) === n),
+  );
+}
+
+function uniqueSortedStrengths(rows: MixedCode[]): number[] {
+  const s = new Set<number>();
+  for (const r of rows) {
+    if (r.strength != null && !Number.isNaN(Number(r.strength))) s.add(Number(r.strength));
+  }
+  return [...s].sort((a, b) => a - b);
+}
+
+function uniqueSortedSuppliers(rows: MixedCode[]): string[] {
+  const s = new Set<string>();
+  for (const r of rows) {
+    const sup = r.supplier?.trim();
+    if (sup) s.add(sup);
+  }
+  return [...s].sort((a, b) => a.localeCompare(b, "th"));
+}
+
+export default function BookingForm({
+  clients,
+  locations,
+  concreteWorks,
+  mixedCodes,
+  wbsCodes,
+  abcCodes,
+  volumeUsedByMixcode,
+  defaultCastingDate,
+  requester,
+}: Props) {
   const [state, action, pending] = useActionState(createBooking, initialState);
   const formRef = useRef<HTMLFormElement>(null);
-  useEffect(() => { if (state.success) formRef.current?.reset(); }, [state.success]);
+  const [requestedAt] = useState(() => new Date());
+
+  const [concreteWorkId, setConcreteWorkId] = useState("");
+  const [structurePick, setStructurePick] = useState("");
+  const [strengthPick, setStrengthPick] = useState("");
+  const [supplierPick, setSupplierPick] = useState("");
+  const [mixcodeId, setMixcodeId] = useState("");
+
+  const eligibleConcreteWorks = useMemo(
+    () => filterConcreteWorksByMixed(concreteWorks, mixedCodes),
+    [concreteWorks, mixedCodes],
+  );
+
+  const selectedCw = useMemo(
+    () => eligibleConcreteWorks.find((c) => String(c.id) === concreteWorkId) ?? null,
+    [eligibleConcreteWorks, concreteWorkId],
+  );
+
+  const structureOptions = useMemo(() => structureTextOptionsFromCw(selectedCw), [selectedCw]);
+
+  const mixedForStructure = useMemo(
+    () => mixedCodesForStructureLabel(structurePick, mixedCodes),
+    [structurePick, mixedCodes],
+  );
+
+  const strengthOptions = useMemo(() => uniqueSortedStrengths(mixedForStructure), [mixedForStructure]);
+
+  const rowsForStrength = useMemo(() => {
+    if (!strengthPick) return [];
+    const sn = Number(strengthPick);
+    if (Number.isNaN(sn)) return [];
+    return mixedForStructure.filter((m) => m.strength != null && Number(m.strength) === sn);
+  }, [mixedForStructure, strengthPick]);
+
+  const supplierOptions = useMemo(() => uniqueSortedSuppliers(rowsForStrength), [rowsForStrength]);
+
+  const rowsForSupplier = useMemo(() => {
+    if (!supplierPick) return rowsForStrength;
+    return rowsForStrength.filter((m) => (m.supplier ?? "").trim() === supplierPick);
+  }, [rowsForStrength, supplierPick]);
+
+  const mixOptions = useMemo(
+    () =>
+      rowsForSupplier.map((m) => ({
+        value: String(m.id),
+        label: [m.mixcode, m.strength ? `${m.strength} ${m.strength_type ?? "ksc"}` : null, m.slump ? `Slump ${m.slump}` : null]
+          .filter(Boolean)
+          .join(" · "),
+      })),
+    [rowsForSupplier],
+  );
+
+  const selectedMix = useMemo(
+    () => mixedCodes.find((m) => String(m.id) === mixcodeId) ?? null,
+    [mixedCodes, mixcodeId],
+  );
+
+  const remainingM3 = useMemo(() => {
+    if (!selectedMix?.id) return null;
+    const qty = selectedMix.qty;
+    if (qty == null) return null;
+    const used = volumeUsedByMixcode[selectedMix.id] ?? 0;
+    return qty - used;
+  }, [selectedMix, volumeUsedByMixcode]);
+
+  const cascadeBlocked =
+    Boolean(concreteWorkId && structureOptions.length === 0) ||
+    Boolean(structurePick && strengthOptions.length === 0) ||
+    Boolean(structurePick && strengthOptions.length > 0 && !strengthPick) ||
+    Boolean(strengthPick && supplierOptions.length === 0) ||
+    Boolean(strengthPick && supplierOptions.length > 0 && !supplierPick) ||
+    Boolean(supplierPick && mixOptions.length === 0) ||
+    Boolean(supplierPick && mixOptions.length > 0 && !mixcodeId);
+
+  useEffect(() => {
+    if (state.success) {
+      formRef.current?.reset();
+      setConcreteWorkId("");
+      setStructurePick("");
+      setStrengthPick("");
+      setSupplierPick("");
+      setMixcodeId("");
+    }
+  }, [state.success]);
+
+  useEffect(() => {
+    setStructurePick("");
+    setStrengthPick("");
+    setSupplierPick("");
+    setMixcodeId("");
+  }, [concreteWorkId]);
+
+  useEffect(() => {
+    setStrengthPick("");
+    setSupplierPick("");
+    setMixcodeId("");
+  }, [structurePick]);
+
+  useEffect(() => {
+    setSupplierPick("");
+    setMixcodeId("");
+  }, [strengthPick]);
+
+  useEffect(() => {
+    setMixcodeId("");
+  }, [supplierPick]);
+
   const err = state.fieldErrors ?? {};
+
+  const requestDisplay = useMemo(
+    () =>
+      requestedAt.toLocaleString("th-TH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
+    [requestedAt],
+  );
 
   return (
     <form ref={formRef} action={action} className="space-y-3">
@@ -42,101 +242,238 @@ export default function BookingForm({ clients, locations, structures, concreteWo
       )}
 
       <Section title="ข้อมูลการขอ">
+        <div>
+          <Label>วันที่ขอ</Label>
+          <input type="text" readOnly className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`} value={requestDisplay} />
+          <p className="mt-1 text-[10px] text-zinc-400">บันทึกเป็นวันเวลาจริงตอนส่งฟอร์ม (แก้ไขไม่ได้)</p>
+        </div>
+        <div className="pt-1 border-t border-zinc-100">
+          <Label>ผู้ขอ</Label>
+          {requester == null ? (
+            <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
+              กรุณา{" "}
+              <Link href="/" className="text-orange-600 font-medium hover:underline">
+                เข้าสู่ระบบ
+              </Link>{" "}
+              เพื่อแสดงชื่อและเบอร์โทรจากโปรไฟล์ — ข้อมูลนี้แก้ไขในฟอร์มไม่ได้
+            </p>
+          ) : (
+            <Row>
+              <div>
+                <Label>ชื่อ-นามสกุล</Label>
+                <input
+                  type="text"
+                  readOnly
+                  tabIndex={-1}
+                  className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`}
+                  value={requester.fullName}
+                />
+              </div>
+              <div>
+                <Label>เบอร์โทร</Label>
+                <input
+                  type="text"
+                  readOnly
+                  tabIndex={-1}
+                  className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`}
+                  value={requester.phone ?? "—"}
+                />
+              </div>
+            </Row>
+          )}
+          <p className="mt-1.5 text-[10px] text-zinc-400">ดึงจากโปรไฟล์ผู้ใช้ที่ล็อกอิน (อ่านอย่างเดียว)</p>
+        </div>
         <Row>
           <div>
-            <Label required>วันที่ขอ</Label>
-            <input type="date" name="request_date" className={inputCls} required />
-            <FieldError msg={err.request_date} />
+            <Label required>วันที่เทคอนกรีต</Label>
+            <input type="date" name="casting_date" className={inputCls} defaultValue={defaultCastingDate} required />
           </div>
           <div>
-            <Label>เวลา</Label>
-            <input type="time" name="request_time" className={inputCls} />
+            <Label>เวลาเทคอนกรีต</Label>
+            <input type="time" name="casting_time" className={inputCls} defaultValue="09:00" />
           </div>
         </Row>
-        <div className="max-w-xs">
-          <Label>วันที่เทคอนกรีต</Label>
-          <input type="date" name="casting_date" className={inputCls} />
+      </Section>
+
+      <Section title="ABC Code & WBS Code">
+        <div>
+          <Label>ABC Code</Label>
+          <Select
+            name="abc_code_id"
+            placeholder="— เลือก ABC Code —"
+            options={abcCodes.map((a) => ({
+              value: String(a.id),
+              label: `${a.full_abc ?? ""}${a.description ? ` — ${a.description}` : ""}`,
+            }))}
+          />
+        </div>
+        <div>
+          <Label>WBS Code</Label>
+          <Select
+            name="wbs_code_id"
+            placeholder="— เลือก WBS Code —"
+            options={wbsCodes.map((w) => ({
+              value: String(w.id),
+              label: `${w.full_wbs ?? ""}${w.description ? ` — ${w.description}` : ""}`,
+            }))}
+          />
         </div>
       </Section>
 
-      <Section title="ผู้ว่าจ้าง & รหัสโปรเจกต์">
+      <Section title="รายละเอียดการจอง">
         <div>
-          <Label>ผู้ว่าจ้าง</Label>
-          <Select name="client_id" placeholder="— เลือกผู้ว่าจ้าง —"
-            options={clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" }))} />
+          <Label required>ผู้รับเหมา</Label>
+          <Select
+            name="client_id"
+            placeholder="— เลือกผู้รับเหมา —"
+            required
+            options={clients.map((c) => ({ value: String(c.id), label: c.client_name ?? "" }))}
+          />
+          <FieldError msg={err.client_id} />
         </div>
-        <Row>
-          <div>
-            <Label>WBS Code</Label>
-            <Select name="wbs_code_id" placeholder="— เลือก WBS Code —"
-              options={wbsCodes.map((w) => ({ value: String(w.id), label: `${w.full_wbs ?? ""}${w.description ? ` — ${w.description}` : ""}` }))} />
-          </div>
-          <div>
-            <Label>ABC Code</Label>
-            <Select name="abc_code_id" placeholder="— เลือก ABC Code —"
-              options={abcCodes.map((a) => ({ value: String(a.id), label: `${a.full_abc ?? ""}${a.description ? ` — ${a.description}` : ""}` }))} />
-          </div>
-        </Row>
-      </Section>
-
-      <Section title="สถานที่ & โครงสร้าง">
-        <div>
-          <Label required>สถานที่</Label>
-          <Select name="location_id" placeholder="— เลือกสถานที่ —" required
-            options={locations.map((l) => ({ value: String(l.id), label: l.full_location ?? l.description ?? `#${l.id}` }))} />
-          <FieldError msg={err.location_id} />
-        </div>
-        <Row>
-          <div>
-            <Label required>ประเภทโครงสร้าง</Label>
-            <Select name="structure_id" placeholder="— เลือกประเภทโครงสร้าง —" required
-              options={structures.map((s) => ({ value: String(s.id), label: s.structure_name ?? "" }))} />
-            <FieldError msg={err.structure_id} />
-          </div>
-          <div>
-            <Label>หมายเลขโครงสร้าง</Label>
-            <input type="text" name="structure_no" className={inputCls} placeholder="เช่น COL-A1-01" />
-          </div>
-        </Row>
         <div>
           <Label required>ประเภทงานคอนกรีต</Label>
-          <Select name="concrete_work_id" placeholder="— เลือกประเภทงาน —" required
-            options={concreteWorks.map((cw) => ({ value: String(cw.id), label: `${cw.concrete_work ?? ""}${cw.structure_list ? ` (${cw.structure_list})` : ""}` }))} />
+          <Select
+            key={`cw-${eligibleConcreteWorks.map((c) => c.id).join(",")}`}
+            name="concrete_work_id"
+            placeholder="— เลือกประเภทงาน —"
+            required
+            options={eligibleConcreteWorks.map((cw) => ({
+              value: String(cw.id),
+              label: cw.concrete_work ?? `#${cw.id}`,
+            }))}
+            onValueChange={setConcreteWorkId}
+          />
           <FieldError msg={err.concrete_work_id} />
+        </div>
+        <div>
+          <Label required>โครงสร้าง</Label>
+          {structureOptions.length === 0 ? (
+            <p className="text-xs text-zinc-400 py-2">
+              {selectedCw ? "ไม่มีรายการโครงสร้างใน structure_list ของงานนี้" : "เลือกประเภทงานคอนกรีตก่อน"}
+            </p>
+          ) : (
+            <Select
+              key={`st-${concreteWorkId}`}
+              name="structure_pick"
+              placeholder="— เลือกโครงสร้าง —"
+              required
+              options={structureOptions}
+              onValueChange={setStructurePick}
+            />
+          )}
+          <FieldError msg={err.structure_pick} />
+        </div>
+        <div>
+          <Label required>สถานที่</Label>
+          <Select
+            name="location_id"
+            placeholder="— เลือกสถานที่ —"
+            required
+            options={locations.map((l) => ({
+              value: String(l.id),
+              label: l.full_location ?? l.description ?? `#${l.id}`,
+            }))}
+          />
+          <FieldError msg={err.location_id} />
+        </div>
+        <div>
+          <Label>หมายเลขโครงสร้าง</Label>
+          <input type="text" name="structure_no" className={inputCls} placeholder="เช่น COL-A1-01" />
         </div>
       </Section>
 
       <Section title="ข้อมูลคอนกรีต">
+        <input type="hidden" name="strength" value={strengthPick} />
+        <div>
+          <Label required>กำลังคอนกรีต</Label>
+          {structurePick ? (
+            <Select
+              key={`str-${structurePick}`}
+              name="booking_strength_ui"
+              placeholder="— เลือกกำลังอัด —"
+              required
+              options={strengthOptions.map((v) => ({ value: String(v), label: `${v} ksc` }))}
+              onValueChange={setStrengthPick}
+            />
+          ) : (
+            <p className="text-xs text-zinc-400 py-2">เลือกโครงสร้างก่อน</p>
+          )}
+        </div>
+        <div>
+          <Label required>Supplier</Label>
+          {strengthPick ? (
+            <Select
+              key={`sup-${structurePick}-${strengthPick}`}
+              name="booking_supplier_ui"
+              placeholder="— เลือก Supplier —"
+              required
+              options={supplierOptions.map((s) => ({ value: s, label: s }))}
+              onValueChange={setSupplierPick}
+            />
+          ) : (
+            <p className="text-xs text-zinc-400 py-2">เลือกกำลังคอนกรีตก่อน</p>
+          )}
+        </div>
         <div>
           <Label required>Mix Code</Label>
-          <Select name="mixcode_id" placeholder="— เลือก Mix Code —" required
-            options={mixedCodes.map((m) => ({
-              value: String(m.id),
-              label: [m.mixcode, m.strength ? `${m.strength} ${m.strength_type ?? "ksc"}` : null, m.slump ? `Slump ${m.slump}` : null, m.supplier ? `[${m.supplier}]` : null].filter(Boolean).join(" · "),
-            }))} />
+          {supplierPick && mixOptions.length > 0 ? (
+            <Select
+              key={`mix-${structurePick}-${strengthPick}-${supplierPick}`}
+              name="mixcode_id"
+              placeholder="— เลือก Mix Code —"
+              required
+              options={mixOptions}
+              onValueChange={setMixcodeId}
+            />
+          ) : (
+            <p className="text-xs text-zinc-400 py-2">
+              {supplierPick ? "ไม่พบ Mix Code ที่ตรงกับเงื่อนไข" : "เลือก Supplier ก่อน"}
+            </p>
+          )}
           <FieldError msg={err.mixcode_id} />
+        </div>
+        <div>
+          <Label>Slump</Label>
+          <input
+            type="text"
+            readOnly
+            tabIndex={-1}
+            className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`}
+            value={selectedMix?.slump?.trim() ? selectedMix.slump : "—"}
+          />
+        </div>
+        <div>
+          <Label>ยอดคงเหลือของ Mix Code (m³)</Label>
+          <input
+            type="text"
+            readOnly
+            tabIndex={-1}
+            className={`${inputCls} bg-zinc-50 text-zinc-600 cursor-not-allowed`}
+            value={
+              selectedMix == null
+                ? "—"
+                : remainingM3 == null
+                  ? "ไม่ได้กำหนด qty ใน Mixed Code"
+                  : `${remainingM3.toFixed(2)} (qty รวม ${selectedMix.qty ?? "—"} − ใช้ไปแล้ว ${volumeUsedByMixcode[selectedMix.id] ?? 0})`
+            }
+          />
         </div>
         <Row>
           <div>
-            <Label>กำลังอัดที่กำหนด (ksc)</Label>
-            <input type="number" name="strength" min="0" step="1" className={inputCls} placeholder="เช่น 280" />
+            <Label>ปริมาณตามแบบ (m³)</Label>
+            <input type="number" name="volume_dwg" min="0" step="0.01" className={inputCls} placeholder="0.00" />
           </div>
           <div>
-            <Label>ปริมาตรตามแบบ (m³)</Label>
-            <input type="number" name="volume_dwg" min="0" step="0.1" className={inputCls} placeholder="0.0" />
-          </div>
-        </Row>
-        <Row>
-          <div>
-            <Label required>ปริมาตรที่ขอ (m³)</Label>
-            <input type="number" name="volume_request" min="0.1" step="0.1" className={inputCls} placeholder="0.0" required />
+            <Label required>ปริมาณที่ขอ (m³)</Label>
+            <input type="number" name="volume_request" min="0.01" step="0.01" className={inputCls} placeholder="0.00" required />
             <FieldError msg={err.volume_request} />
           </div>
-          <div>
-            <Label>จำนวนตัวอย่าง (ก้อน)</Label>
-            <input type="number" name="sample_qty" min="0" step="1" className={inputCls} placeholder="0" />
-          </div>
         </Row>
+        <div>
+          <Label>จำนวนตัวอย่าง (ก้อน)</Label>
+          <input type="number" name="sample_qty" min="0" step="1" className={inputCls} defaultValue={9} />
+        </div>
       </Section>
 
       <Section title="หมายเหตุ">
@@ -147,8 +484,8 @@ export default function BookingForm({ clients, locations, structures, concreteWo
       </Section>
 
       <div className="flex gap-2 justify-end pt-1 pb-4">
-        <BtnGhost href="/">ยกเลิก</BtnGhost>
-        <BtnPrimary type="submit" disabled={pending}>
+        <BtnGhost href="/dashboard">ยกเลิก</BtnGhost>
+        <BtnPrimary type="submit" disabled={pending || cascadeBlocked || requester == null}>
           {pending ? "กำลังบันทึก…" : "ยืนยันการจอง"}
         </BtnPrimary>
       </div>

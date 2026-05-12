@@ -18,6 +18,7 @@ export type CompressionMachine = Tables<"Compression Machine">;
 
 export async function getRequests(limit: number, offset: number) {
   const supabase = createReadonlyClient();
+  if (!supabase) return { data: [], count: 0 };
   const { data, error, count } = await supabase
     .from("Request_View")
     .select("*", { count: "estimated" })
@@ -30,6 +31,7 @@ export async function getRequests(limit: number, offset: number) {
 
 export async function getRequestsByStatus(statusId: number, limit = 200, offset = 0) {
   const supabase = createReadonlyClient();
+  if (!supabase) return { data: [], count: 0 };
   const { data, error, count } = await supabase
     .from("Request_View")
     .select("*", { count: "exact" })
@@ -41,8 +43,9 @@ export async function getRequestsByStatus(statusId: number, limit = 200, offset 
   return { data: data ?? [], count: count ?? 0 };
 }
 
-export async function getRequestById(id: string) {
+export async function getRequestById(id: string): Promise<RequestView | null> {
   const supabase = createReadonlyClient();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("Request_View")
     .select("*")
@@ -54,6 +57,7 @@ export async function getRequestById(id: string) {
 
 export async function getStatusList() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Status").select("*").order("id");
   if (error) throw error;
   return data ?? [];
@@ -61,6 +65,7 @@ export async function getStatusList() {
 
 export async function getStatusSummary() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data: statuses, error: statusErr } = await supabase
     .from("Status").select("id, status_name").order("id");
   if (statusErr) throw statusErr;
@@ -89,6 +94,7 @@ export async function getStatusSummary() {
 
 export async function getLocations() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Location").select("*").order("full_location");
   if (error) throw error;
   return data ?? [];
@@ -96,6 +102,7 @@ export async function getLocations() {
 
 export async function getStructures() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Structure").select("*").order("structure_name");
   if (error) throw error;
   return data ?? [];
@@ -103,6 +110,7 @@ export async function getStructures() {
 
 export async function getClients() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Client").select("*").order("client_name");
   if (error) throw error;
   return data ?? [];
@@ -110,13 +118,23 @@ export async function getClients() {
 
 export async function getMixedCodes() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Mixed Code").select("*").order("mixcode");
   if (error) throw error;
   return data ?? [];
 }
 
+export async function getMixedCodeById(id: number): Promise<MixedCode | null> {
+  const supabase = createReadonlyClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("Mixed Code").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
 export async function getConcreteWorks() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Concrete Works").select("*").order("concrete_work");
   if (error) throw error;
   return data ?? [];
@@ -124,6 +142,7 @@ export async function getConcreteWorks() {
 
 export async function getProfiles() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("profiles").select("*").order("fname");
   if (error) throw error;
   return data ?? [];
@@ -131,6 +150,7 @@ export async function getProfiles() {
 
 export async function getJobs() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Jobs").select("*").order("job_name");
   if (error) throw error;
   return data ?? [];
@@ -138,6 +158,7 @@ export async function getJobs() {
 
 export async function getABCCodes() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("ABC Code").select("*").order("full_abc");
   if (error) throw error;
   return data ?? [];
@@ -145,6 +166,7 @@ export async function getABCCodes() {
 
 export async function getWBSCodes() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("WBS Code").select("*").order("full_wbs");
   if (error) throw error;
   return data ?? [];
@@ -152,6 +174,7 @@ export async function getWBSCodes() {
 
 export async function getCompressionMachines() {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase.from("Compression Machine").select("*").order("machine");
   if (error) throw error;
   return data ?? [];
@@ -166,6 +189,7 @@ export type MixcodeVolume = {
 
 export async function getVolumeByMixcode(): Promise<MixcodeVolume[]> {
   const supabase = createReadonlyClient();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("Request")
     .select("mixcode_id, volume_confirm, volume_request")

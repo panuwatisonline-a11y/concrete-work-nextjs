@@ -1,7 +1,7 @@
-import { getMixedCodes, getVolumeByMixcode, getStructures } from "@/lib/supabase/queries";
-import type { MixedCode, MixcodeVolume, Structure } from "@/lib/supabase/queries";
+import { getMixedCodes, getVolumeByMixcode } from "@/lib/supabase/queries";
+import type { MixedCode, MixcodeVolume } from "@/lib/supabase/queries";
 import TabNav from "@/components/TabNav";
-import { AddMixedCodeButton, EditMixedCodeButton, MixedCodeFAB } from "./MixedCodeActions";
+import { AddMixedCodeButton, EditMixedCodeButton } from "./MixedCodeActions";
 import { AppLogo, Card } from "@/components/ui";
 import BottomNav from "@/components/BottomNav";
 
@@ -32,7 +32,7 @@ function UsageBar({ used, total }: { used: number; total: number | null }) {
 }
 
 /* Mobile card */
-function MCCard({ mc, structures }: { mc: MC; structures: Structure[] }) {
+function MCCard({ mc }: { mc: MC }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   return (
     <Card className="p-4 space-y-3">
@@ -40,7 +40,7 @@ function MCCard({ mc, structures }: { mc: MC; structures: Structure[] }) {
         <span className="font-mono text-sm font-semibold text-orange-500">{mc.mixcode ?? "—"}</span>
         <div className="flex items-center gap-2">
           {mc.supplier && <span className="text-xs text-zinc-400 bg-zinc-50 px-2 py-0.5 rounded-full">{mc.supplier}</span>}
-          <EditMixedCodeButton mc={mc} structures={structures} />
+          <EditMixedCodeButton mc={mc} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -66,7 +66,7 @@ function MCCard({ mc, structures }: { mc: MC; structures: Structure[] }) {
 }
 
 /* Desktop table row */
-function MCRow({ mc, structures }: { mc: MC; structures: Structure[] }) {
+function MCRow({ mc }: { mc: MC }) {
   const hasQty = mc.qty != null && mc.qty > 0;
   return (
     <tr className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
@@ -82,13 +82,13 @@ function MCRow({ mc, structures }: { mc: MC; structures: Structure[] }) {
       <td className="px-4 py-3 w-32">
         {hasQty && <UsageBar used={mc.volume_used} total={mc.qty} />}
       </td>
-      <td className="px-3 py-3"><EditMixedCodeButton mc={mc} structures={structures} /></td>
+      <td className="px-3 py-3"><EditMixedCodeButton mc={mc} /></td>
     </tr>
   );
 }
 
 export default async function MixedCodesPage() {
-  const [mixedCodes, volumes, structures] = await Promise.all([getMixedCodes(), getVolumeByMixcode(), getStructures()]);
+  const [mixedCodes, volumes] = await Promise.all([getMixedCodes(), getVolumeByMixcode()]);
 
   const volMap: Record<number, number> = {};
   for (const v of volumes) volMap[v.mixcode_id] = v.volume_used;
@@ -102,23 +102,18 @@ export default async function MixedCodesPage() {
     <main className="min-h-screen bg-zinc-50">
       {/* Top header */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <AppLogo />
-          {/* Desktop only — mobile uses FAB */}
-          <div className="hidden md:block">
-            <AddMixedCodeButton structures={structures} />
+        <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <AppLogo />
           </div>
+          <AddMixedCodeButton />
         </div>
       </header>
 
       {/* Tab nav */}
       <TabNav active="mixed-codes" />
 
-      {/* FAB — mobile only */}
-      <MixedCodeFAB structures={structures} />
-      <BottomNav />
-
-      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4 pb-24 md:pb-5">
+      <div className="max-w-screen-2xl mx-auto px-4 py-5 space-y-4 pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:pb-5">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Mixed Code</p>
           <span className="text-xs text-zinc-400">{data.length} รายการ</span>
@@ -132,7 +127,7 @@ export default async function MixedCodesPage() {
           <>
             {/* Mobile */}
             <div className="md:hidden space-y-2">
-              {data.map((mc) => <MCCard key={mc.id} mc={mc} structures={structures} />)}
+              {data.map((mc) => <MCCard key={mc.id} mc={mc} />)}
             </div>
 
             {/* Desktop */}
@@ -147,7 +142,7 @@ export default async function MixedCodesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((mc) => <MCRow key={mc.id} mc={mc} structures={structures} />)}
+                    {data.map((mc) => <MCRow key={mc.id} mc={mc} />)}
                   </tbody>
                 </table>
               </div>
@@ -155,6 +150,8 @@ export default async function MixedCodesPage() {
           </>
         )}
       </div>
+
+      <BottomNav />
     </main>
   );
 }

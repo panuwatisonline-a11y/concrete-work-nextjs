@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRequestById } from "@/lib/supabase/queries";
+import {
+  formatRemarksForDisplay,
+  formatVolumeM3,
+  parseCastingTimeFromRemarks,
+  parseStructurePickFromRemarks,
+} from "@/lib/request-format";
 import { StatusBadge, formatDate } from "@/components/RequestList";
-import { AppLogo, Card } from "@/components/ui";
+import { Card } from "@/components/ui";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === "") return null;
@@ -58,6 +64,10 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
   const req = await getRequestById(id).catch(() => null);
   if (!req) notFound();
 
+  const castingTime = parseCastingTimeFromRemarks(req.remarks);
+  const structureLabel = req.structure_name ?? parseStructurePickFromRemarks(req.remarks);
+  const remarksDisplay = formatRemarksForDisplay(req.remarks);
+
   const timeline = [
     { label: "จองแล้ว",            at: req.booked_at,     by: req.booked_by_name },
     { label: "ตรวจสอบผ่านแล้ว",    at: req.inspected_at,  by: req.inspected_by_name },
@@ -93,30 +103,39 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         <Section title="ข้อมูลการขอ">
           <Field label="วันที่ขอ" value={<>{formatDate(req.request_date)}{req.request_time && <span className="ml-2 text-zinc-400 text-xs">{req.request_time.slice(0, 5)}</span>}</>} />
           <Field label="วันที่เทคอนกรีต" value={formatDate(req.casting_date)} />
-          <Field label="ผู้ว่าจ้าง" value={req.client_name} />
+          <Field label="เวลาเทคอนกรีต" value={castingTime ?? "—"} />
+        </Section>
+
+        <Section title="ABC Code & WBS Code">
+          <FullField label="ABC Code" value={req.full_abc ?? "—"} />
+          <FullField label="WBS Code" value={req.full_wbs ?? "—"} />
+        </Section>
+
+        <Section title="รายละเอียดการจอง">
+          <Field label="ผู้รับเหมา" value={req.client_name} />
+          <FullField label="ประเภทงานคอนกรีต" value={req.concrete_work} />
+          <Field label="โครงสร้าง" value={structureLabel ?? "—"} />
           <FullField label="สถานที่" value={req.full_location} />
-          <Field label="โครงสร้าง" value={req.structure_name} />
           <Field label="หมายเลขโครงสร้าง" value={req.structure_no} />
-          <FullField label="ประเภทงาน" value={req.concrete_work} />
         </Section>
 
         <Section title="ข้อมูลคอนกรีต">
           <Field label="Mix Code" value={<span className="font-mono font-semibold text-orange-500">{req.mixcode}</span>} />
-          <Field label="กำลังอัด" value={req.strength ? `${req.strength} ${req.strength_type ?? "ksc"}` : null} />
+          <Field label="กำลังคอนกรีต" value={req.strength != null ? `${req.strength} ${req.strength_type ?? "ksc"}` : null} />
           <Field label="Slump" value={req.slump} />
           <Field label="Supplier" value={req.supplier} />
-          <Field label="ปริมาตรตามแบบ (m³)" value={req.volume_dwg?.toLocaleString()} />
-          <Field label="ปริมาตรที่ขอ (m³)" value={<span className="font-semibold text-zinc-900">{req.volume_request?.toLocaleString() ?? "—"}</span>} />
-          {req.volume_actual != null && <Field label="ปริมาตรจริง (m³)" value={req.volume_actual.toLocaleString()} />}
-          {req.volume_confirm != null && <Field label="ปริมาตร Confirm (m³)" value={req.volume_confirm.toLocaleString()} />}
+          <Field label="ปริมาณตามแบบ (m³)" value={formatVolumeM3(req.volume_dwg)} />
+          <Field label="ปริมาณที่ขอ (m³)" value={<span className="font-semibold text-zinc-900">{formatVolumeM3(req.volume_request)}</span>} />
+          {req.volume_actual != null && <Field label="ปริมาณจริง (m³)" value={formatVolumeM3(req.volume_actual)} />}
+          {req.volume_confirm != null && <Field label="ปริมาณ Confirm (m³)" value={formatVolumeM3(req.volume_confirm)} />}
           <Field label="จำนวนตัวอย่าง" value={req.sample_qty != null ? `${req.sample_qty} ก้อน${req.sample_type ? ` (${req.sample_type})` : ""}` : null} />
         </Section>
 
-        {(req.full_wbs || req.full_abc) && (
-          <Section title="รหัสโปรเจกต์">
-            <FullField label="WBS Code" value={req.full_wbs} />
-            <FullField label="ABC Code" value={req.full_abc} />
-          </Section>
+        {remarksDisplay && (
+          <Card className="px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 mb-2">หมายเหตุ</p>
+            <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">{remarksDisplay}</p>
+          </Card>
         )}
 
         {req.postpone_date && (
@@ -131,13 +150,6 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
             <FullField label="เหตุผลการปฏิเสธ" value={req.reason_reject} />
             <FullField label="เหตุผลการยกเลิก" value={req.reason_cancel} />
           </Section>
-        )}
-
-        {req.remarks && (
-          <Card className="px-4 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 mb-2">หมายเหตุ</p>
-            <p className="text-sm text-zinc-700 leading-relaxed">{req.remarks}</p>
-          </Card>
         )}
 
         {timeline.length > 0 && (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { RequestView } from "@/lib/supabase/queries";
+import { formatRemarksForDisplay, formatVolumeM3, parseStructurePickFromRemarks } from "@/lib/request-format";
 import { Card } from "@/components/ui";
 
 /* ── Status colour system (cohesive palette) ─────────────────────── */
@@ -45,26 +46,51 @@ export function formatDate(d: string | null) {
   return `${day}/${m}/${y}`;
 }
 
-/* ── Ultra-minimal row (dashboard) ──────────────────────────────── */
+/* ── Dashboard “รายการล่าสุด” — readable multi-line row (mobile-first) ─ */
 function RequestRowMinimal({ req }: { req: RequestView }) {
   const s = statusStyle(req.status_id);
   return (
     <Link
       href={`/requests/${req.id}`}
-      className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 border-b border-zinc-100 last:border-0 transition-colors group"
+      className="flex gap-3 px-4 py-3.5 hover:bg-zinc-50/90 active:bg-zinc-50 border-b border-zinc-100 last:border-b-0 transition-colors group"
     >
-      <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-      <span className="text-xs text-zinc-400 tabular-nums shrink-0 w-16">{formatDate(req.request_date)}</span>
-      <span className="text-xs text-zinc-700 flex-1 min-w-0 truncate">
-        {req.full_location ?? "—"}
-        {req.mixcode && <span className="text-zinc-400"> · {req.mixcode}</span>}
-      </span>
-      <span className="text-xs font-semibold text-zinc-800 tabular-nums shrink-0">
-        {req.volume_request?.toLocaleString() ?? "—"}<span className="text-[10px] font-normal text-zinc-400 ml-0.5">m³</span>
-      </span>
-      <svg className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
+      <span className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white ${s.dot}`} aria-hidden />
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-zinc-900 tabular-nums tracking-tight">
+              {formatDate(req.request_date)}
+              {req.request_time && (
+                <span className="text-xs font-normal text-zinc-400 tabular-nums ml-1.5">{req.request_time.slice(0, 5)}</span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-baseline gap-1 shrink-0 text-right">
+            <span className="text-base font-bold text-zinc-900 tabular-nums leading-none">
+              {formatVolumeM3(req.volume_request)}
+            </span>
+            <span className="text-[11px] font-medium text-zinc-400">m³</span>
+          </div>
+        </div>
+        <p className="text-[13px] text-zinc-600 leading-snug line-clamp-2">{req.full_location ?? "—"}</p>
+        {(req.mixcode || req.status_name) && (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-tight">
+            {req.mixcode && (
+              <span className="inline-flex font-mono font-semibold text-orange-700 bg-orange-50 border border-orange-100/80 px-2 py-0.5 rounded-md">
+                {req.mixcode}
+              </span>
+            )}
+            {req.status_name && (
+              <span className="text-zinc-500 truncate max-w-full">{req.status_name}</span>
+            )}
+          </p>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center self-center pt-0.5">
+        <svg className="w-4 h-4 text-zinc-300 group-hover:text-orange-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
     </Link>
   );
 }
@@ -92,7 +118,7 @@ function RequestCard({ req }: { req: RequestView }) {
         <div className="mt-2"><StatusBadge statusId={req.status_id} statusName={req.status_name} /></div>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-sm font-bold text-zinc-800 tabular-nums">{req.volume_request?.toLocaleString() ?? "—"}</p>
+        <p className="text-sm font-bold text-zinc-800 tabular-nums">{formatVolumeM3(req.volume_request)}</p>
         <p className="text-[10px] text-zinc-400">m³</p>
       </div>
       <svg className="w-4 h-4 text-zinc-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -104,6 +130,7 @@ function RequestCard({ req }: { req: RequestView }) {
 
 /* ── Detailed card (status page) ─────────────────────────────────── */
 function RequestCardDetailed({ req }: { req: RequestView }) {
+  const note = formatRemarksForDisplay(req.remarks);
   return (
     <Link
       href={`/requests/${req.id}`}
@@ -111,7 +138,7 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-zinc-800 truncate">{req.client_name ?? "ไม่ระบุผู้ว่าจ้าง"}</p>
+          <p className="text-xs font-semibold text-zinc-800 truncate">{req.client_name ?? "ไม่ระบุผู้รับเหมา"}</p>
           <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{req.full_location ?? "—"}</p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -125,10 +152,10 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
         {([
           ["วันที่ขอ",     `${formatDate(req.request_date)}${req.request_time ? ` · ${req.request_time.slice(0, 5)}` : ""}`],
           ["วันที่เท",     formatDate(req.casting_date)],
-          ["โครงสร้าง",    `${req.structure_name ?? "—"}${req.structure_no ? ` (${req.structure_no})` : ""}`],
+          ["โครงสร้าง",    `${req.structure_name ?? parseStructurePickFromRemarks(req.remarks) ?? "—"}${req.structure_no ? ` (${req.structure_no})` : ""}`],
           ["ประเภทงาน",    req.concrete_work ?? "—"],
           ["Mix Code",    req.mixcode ?? "—"],
-          ["ปริมาตร",      req.volume_request != null ? `${req.volume_request.toLocaleString()} m³` : "—"],
+          ["ปริมาณ",      `${formatVolumeM3(req.volume_request)} m³`],
         ] as [string, string][]).map(([label, val]) => (
           <div key={label}>
             <p className="text-[9px] uppercase tracking-widest text-zinc-400 mb-0.5">{label}</p>
@@ -136,8 +163,8 @@ function RequestCardDetailed({ req }: { req: RequestView }) {
           </div>
         ))}
       </div>
-      {req.remarks && (
-        <p className="text-[11px] text-zinc-400 border-t border-zinc-100 pt-2 truncate">{req.remarks}</p>
+      {note && (
+        <p className="text-[11px] text-zinc-400 border-t border-zinc-100 pt-2 truncate">{note}</p>
       )}
     </Link>
   );
@@ -149,7 +176,7 @@ function RequestRow({ req }: { req: RequestView }) {
     <>{formatDate(req.request_date)}{req.request_time && <span className="ml-1.5 text-zinc-400 tabular-nums">{req.request_time.slice(0, 5)}</span>}</>,
     req.client_name ?? "—",
     req.full_location ?? "—",
-    <>{req.structure_name ?? "—"}{req.structure_no && <span className="ml-1 text-zinc-400"> ({req.structure_no})</span>}</>,
+    <>{req.structure_name ?? parseStructurePickFromRemarks(req.remarks) ?? "—"}{req.structure_no && <span className="ml-1 text-zinc-400"> ({req.structure_no})</span>}</>,
     req.concrete_work ?? "—",
     req.mixcode ?? "—",
   ];
@@ -161,7 +188,7 @@ function RequestRow({ req }: { req: RequestView }) {
         </td>
       ))}
       <td className="px-4 py-3 text-xs text-zinc-700 text-right tabular-nums whitespace-nowrap">
-        <Link href={`/requests/${req.id}`} className="block">{req.volume_request?.toLocaleString() ?? "—"}</Link>
+        <Link href={`/requests/${req.id}`} className="block">{formatVolumeM3(req.volume_request)}</Link>
       </td>
       <td className="px-4 py-3">
         <Link href={`/requests/${req.id}`} className="block">
@@ -192,7 +219,7 @@ export function RequestList({
 
   if (minimal) {
     return (
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
         {requests.map((req) => <RequestRowMinimal key={req.id} req={req} />)}
       </div>
     );
@@ -214,7 +241,7 @@ export function RequestList({
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-zinc-200 bg-zinc-50">
-                {["วันที่ขอ","ผู้ว่าจ้าง","สถานที่","โครงสร้าง","ประเภทงาน","Mix Code","ปริมาตร (m³)","สถานะ"].map((h, i) => (
+                {["วันที่ขอ","ผู้รับเหมา","สถานที่","โครงสร้าง","ประเภทงาน","Mix Code","ปริมาณ (m³)","สถานะ"].map((h, i) => (
                   <th key={h} className={`px-4 py-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-widest whitespace-nowrap ${i === 6 ? "text-right" : ""}`}>
                     {h}
                   </th>
