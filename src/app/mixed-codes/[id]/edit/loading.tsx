@@ -1,0 +1,37 @@
+import { Pulse } from "@/components/route-loading";
+
+export default function Loading() {
+  return (
+    <main className="min-h-screen bg-zinc-50" role="status" aria-label="กำลังโหลดแก้ไข Mix Code">
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/75">
+        <div className="max-w-screen-md mx-auto px-4 h-14 flex items-center gap-3 min-w-0">
+          <Pulse className="h-8 w-8 shrink-0 rounded-lg" />
+          <Pulse className="h-8 w-28 shrink-0" />
+          <span className="text-zinc-200 text-sm shrink-0 select-none" aria-hidden>
+            /
+          </span>
+          <Pulse className="h-3 flex-1 min-w-[5rem] max-w-[40%]" />
+        </div>
+      </header>
+
+      <div className="max-w-screen-md mx-auto px-4 py-6 space-y-5">
+        <div className="space-y-2 min-w-0">
+          <Pulse className="h-5 w-full max-w-md" />
+          <Pulse className="h-3 w-full max-w-sm" />
+        </div>
+        <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm shadow-zinc-900/[0.03]">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <Pulse className="h-3 w-32" />
+              <Pulse className="h-10 w-full rounded-xl" />
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Pulse className="h-11 w-28 rounded-xl" />
+            <Pulse className="h-11 w-24 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
